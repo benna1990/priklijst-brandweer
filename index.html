@@ -48,8 +48,17 @@
   .bv-toggle { font-family:'Oswald',sans-serif; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; padding:5px 9px; border-radius:14px; border:1.5px solid var(--paper-line); background:#fff; color:var(--muted); cursor:pointer; flex:0 0 auto; white-space:nowrap; }
   .bv-toggle.cooks { border-color:var(--green); color:var(--green); }
   .bv-toggle.nocook { border-color:var(--blue); color:var(--blue); background:#eef4fb; }
-  .dienst-actions { padding:12px 16px; background:#faf9f5; border-top:1px solid var(--paper-line); display:flex; gap:10px; }
-  .dienst-actions .btn { flex:1; }
+  .toolbar-live { font-family:'Oswald',sans-serif; font-size:14px; padding:5px 10px; border-radius:16px; background:var(--steel); color:#fff; letter-spacing:0.5px; white-space:nowrap; }
+  .toolbar-live.warn { background:var(--gold); color:var(--ink); }
+  .edit-row-main { display:flex; align-items:center; gap:8px; }
+  .edit-row-stats { padding:8px 0 4px; display:none; gap:10px; }
+  .edit-stat { display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .edit-stat label { font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); font-family:'Oswald'; white-space:nowrap; }
+  .edit-stat .num-in { width:60px; padding:6px 4px; border:1px solid var(--paper-line); border-radius:5px; font-family:'Barlow'; text-align:center; }
+  .hist-type-badge { font-size:11px; font-family:'Oswald'; text-transform:uppercase; letter-spacing:0.5px; padding:2px 8px; border-radius:10px; display:inline-block; margin-bottom:4px; }
+  .hist-nieuw-lid .hist-type-badge { background:#eef6f1; color:var(--green); border:1px solid #b9dfc8; }
+  .hist-aanpassing .hist-type-badge { background:#fdf5e0; color:#8a6c00; border:1px solid #f0d98a; }
+  .hist-item .kok-alt { font-family:'Oswald',sans-serif; font-size:16px; font-weight:600; }
   table { width: 100%; border-collapse: collapse; }
   thead th { background: var(--steel); color: #fff; font-family: 'Oswald', sans-serif; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; font-size: 12px; padding: 11px 8px; text-align: center; white-space: nowrap; }
   thead th.name-col { text-align: left; padding-left: 16px; }
@@ -62,7 +71,7 @@
   .counter { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 20px; color: var(--red); }
   .substat { color: var(--muted); font-size: 13px; }
   .stamb { font-size: 13px; color: var(--muted); }
-  .role-pill { font-size:10px; font-family:'Oswald'; text-transform:uppercase; letter-spacing:0.5px; background:var(--blue); color:#fff; padding:2px 6px; border-radius:10px; margin-left:6px; vertical-align:middle; }
+  .role-pill { font-size:10px; font-family:'Oswald'; text-transform:uppercase; letter-spacing:0.5px; background:var(--red); color:#fff; padding:2px 6px; border-radius:10px; margin-left:6px; vertical-align:middle; }
   .mini { background: none; border: none; cursor: pointer; font-size: 14px; color: var(--muted); padding: 4px; border-radius: 4px; }
   .mini:hover { background: var(--paper); color: var(--ink); }
   .toolbar { position: fixed; bottom: 0; left: 0; right: 0; display: flex; flex-wrap: nowrap; gap: 8px; align-items: center; background: rgba(244,241,234,0.97); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border-top: 2px solid var(--paper-line); padding: 10px 16px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 40; box-shadow: 0 -4px 14px rgba(0,0,0,0.1); }
@@ -113,7 +122,7 @@
   .edit-row input.name-in { flex: 1; padding: 7px 9px; border: 1px solid var(--paper-line); border-radius: 5px; font-family:'Barlow'; }
   .edit-row input.num-in { flex: 0 0 48px; padding: 7px 5px; border: 1px solid var(--paper-line); border-radius: 5px; font-family:'Barlow'; text-align:center; }
   .edit-row .bv-mini { flex:0 0 auto; font-size:11px; font-family:'Oswald'; text-transform:uppercase; padding:6px 8px; border-radius:12px; border:1.5px solid var(--paper-line); background:#fff; color:var(--muted); cursor:pointer; }
-  .edit-row .bv-mini.on { border-color:var(--blue); color:#fff; background:var(--blue); }
+  .edit-row .bv-mini.on { border-color:var(--red); color:#fff; background:var(--red); }
   /* CONFIRM KOK */
   .confirm-kok { text-align:center; }
   .confirm-kok .big-name { font-family:'Oswald',sans-serif; font-size:32px; font-weight:700; color:var(--red); margin:6px 0; }
@@ -357,10 +366,6 @@
           <small>teller 0 · 0x gekookt</small></div>
         
       </div></div>
-    <div class="dienst-actions">
-      <button class="btn ghost" onclick="clearPresent()">Wis selectie</button>
-      <button class="btn gold" onclick="startConfirm()">Bepaal kok →</button>
-    </div>
   </div>
   <div class="panel hidden" id="panelRang">
     <div id="cooknow" class="cooknow"></div>
@@ -386,8 +391,11 @@
     <div id="histEmpty" class="empty-state"><div class="big">📜</div>Nog geen verwerkte diensten.</div>
   </div>
   <div class="toolbar">
-    <span class="counthint" id="counthint"></span>
+    <span class="counthint" id="counthint" style="display:none"></span>
+    <span class="toolbar-live" id="toolbarLive">0 aanwezig</span>
     <div class="spacer"></div>
+    <button class="btn ghost" id="toolbarWis" onclick="clearPresent()">Wis</button>
+    <button class="btn gold" id="toolbarBepaal" onclick="startConfirm()">Bepaal kok →</button>
     <button class="gear-btn" onclick="openManage()" title="Lijst beheren" aria-label="Lijst beheren">⚙</button>
   </div>
 </div>
@@ -421,7 +429,7 @@
     <div class="modal-head">Persoon toevoegen <button class="x" onclick="closeAdd()">×</button></div>
     <div class="modal-body">
       <div class="field"><label>Naam</label><input id="addName" placeholder="Voor- en achternaam" autocomplete="off"></div>
-      <div class="field"><label>Begin-teller</label><input id="addCounter" value="0" inputmode="numeric"></div>
+      <div class="field"><label>Begin-teller</label><input id="addCounter" value="0" inputmode="numeric"><div id="addAvgHint" style="font-size:12px;color:var(--muted);margin-top:3px;display:none"></div></div>
       <div class="row2">
         <div class="field"><label>Al gekookt</label><input id="addCooked" value="0" inputmode="numeric"></div>
         <div class="field"><label>Diensten totaal</label><input id="addDiensten" value="0" inputmode="numeric"></div>
@@ -502,6 +510,10 @@
         <div>
           <div style="font-family:'Oswald';text-transform:uppercase;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:4px">Bevelvoerder (BV)</div>
           BV's doen standaard niet mee met koken. Per dienst is dat aan te zetten als ze toch willen meedoen.
+        </div>
+        <div>
+          <div style="font-family:'Oswald';text-transform:uppercase;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:4px">Nieuwe collega</div>
+          Bij het toevoegen van een nieuwe collega wordt de <b>gemiddelde teller</b> van de huidige ploeg automatisch ingevuld. Zo begint iemand niet met een achterstand of voorsprong.
         </div>
         <div style="background:#faf9f5;border-radius:8px;padding:12px 14px;border:1px solid var(--paper-line)">
           <div style="font-family:'Oswald';text-transform:uppercase;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:8px">Bij gelijkstand</div>
@@ -606,6 +618,11 @@ function setMode(m) {
     document.getElementById('tab'+x).classList.toggle('active', m===x.toLowerCase());
     document.getElementById('panel'+x).classList.toggle('hidden', m!==x.toLowerCase());
   });
+  const isDienst = m === 'dienst';
+  document.getElementById('toolbarLive').style.display = isDienst ? '' : 'none';
+  document.getElementById('toolbarWis').style.display = isDienst ? '' : 'none';
+  document.getElementById('toolbarBepaal').style.display = isDienst ? '' : 'none';
+  document.getElementById('counthint').style.display = isDienst ? 'none' : '';
   render();
 }
 function defaultCooks(p) { return !p.bevelvoerder; }
@@ -617,6 +634,13 @@ function render() {
     people.length + ' personen · ' + people.filter(p=>p.bevelvoerder).length + ' bevelvoerder(s)';
   save();
 }
+function updateToolbarLive() {
+  const n = present.size;
+  const el = document.getElementById('toolbarLive');
+  if (!el) return;
+  el.textContent = n + ' aanwezig';
+  el.className = 'toolbar-live' + (n > 0 && n !== 8 ? ' warn' : '');
+}
 function renderDienst() {
   const roster = document.getElementById('roster');
   const sorted = sortAlpha(people);
@@ -625,7 +649,6 @@ function renderDienst() {
     const cooks = cooksThisShift[p.id];
     let bvBtn = '';
     if (isPresent) bvBtn = `<button class="bv-toggle ${cooks?'cooks':'nocook'}" onclick="toggleCooks('${p.id}')">${cooks?'kookt mee':'kookt niet'}</button>`;
-    else if (p.bevelvoerder) bvBtn = `<span class="bv-toggle">BV</span>`;
     return `<div class="rosterrow ${isPresent?'present':''}">
         <button class="chk ${isPresent?'on':''}" onclick="togglePresent('${p.id}')">${isPresent?'✓':''}</button>
         <div class="nm">${esc(p.name)}${p.bevelvoerder?'<span class="role-pill">BV</span>':''}</div>
@@ -636,6 +659,7 @@ function renderDienst() {
   const cc = document.getElementById('dienstCount');
   cc.textContent = n + ' aanwezig';
   cc.className = 'count' + (n>0 && n<8 ? ' warn' : '');
+  updateToolbarLive();
 }
 function renderRang() {
   const sorted = sortForCook(people);
@@ -666,6 +690,27 @@ function renderHist() {
   list.innerHTML = history.map((h, i) => {
     const d = h.dienstDate ? new Date(h.dienstDate + 'T12:00:00') : new Date(h.ts);
     const datum = d.toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+    const type = h.type || 'dienst';
+    if (type === 'nieuw_lid') {
+      return `<div class="hist-item hist-nieuw-lid">
+        <div class="hist-type-badge">👤 Nieuwe collega</div>
+        <div class="top"><span class="kok-alt">${esc(h.kokNaam)}</span><span class="date">${datum}</span></div>
+        <div class="det">Begin-teller: ${h.beginCounter ?? 0}</div>
+      </div>`;
+    }
+    if (type === 'aanpassing') {
+      const changes = [];
+      if (h.from && h.to) {
+        if (h.from.counter !== h.to.counter) changes.push(`Teller: ${h.from.counter} → ${h.to.counter}`);
+        if (h.from.cooked !== h.to.cooked) changes.push(`Gekookt: ${h.from.cooked} → ${h.to.cooked}`);
+        if (h.from.diensten !== h.to.diensten) changes.push(`Diensten: ${h.from.diensten} → ${h.to.diensten}`);
+      }
+      return `<div class="hist-item hist-aanpassing">
+        <div class="hist-type-badge">✏️ Handmatige aanpassing</div>
+        <div class="top"><span class="kok-alt">${esc(h.kokNaam)}</span><span class="date">${datum}</span></div>
+        <div class="det">${changes.join(' · ') || 'Gewijzigd'}</div>
+      </div>`;
+    }
     const undo = (i===0) ? `<button class="btn ghost hist-undo" onclick="undoLast()">↩ Maak ongedaan</button>` : '';
     return `<div class="hist-item">
       <div class="top">
@@ -785,15 +830,21 @@ function undoLast() {
 }
 function openAdd() { requirePin(doOpenAdd); }
 function doOpenAdd() {
+  const nonBv = people.filter(p => !p.bevelvoerder);
+  const avgCounter = nonBv.length ? Math.round(nonBv.reduce((s,p) => s+p.counter, 0) / nonBv.length) : 0;
   document.getElementById('addName').value='';
-  document.getElementById('addCounter').value='0';
+  document.getElementById('addCounter').value = avgCounter;
   document.getElementById('addCooked').value='0';
   document.getElementById('addDiensten').value='0';
   document.getElementById('addBv').checked=false;
+  const hint = document.getElementById('addAvgHint');
+  if (nonBv.length) { hint.textContent = 'Gemiddelde teller huidige collega\'s: ' + avgCounter; hint.style.display = 'block'; }
+  else { hint.style.display = 'none'; }
   document.getElementById('addOverlay').classList.add('show');
   setTimeout(()=>document.getElementById('addName').focus(),50);
 }
 var _addFromManage = false;
+var _manageSnapshot = {};
 function closeAdd(){
   document.getElementById('addOverlay').classList.remove('show');
   if (_addFromManage) { _addFromManage = false; doOpenManage(); }
@@ -801,11 +852,16 @@ function closeAdd(){
 function saveAdd() {
   const name = document.getElementById('addName').value.trim();
   if (!name) { toast('Naam invullen'); return; }
-  people.push({ id: 'p_'+Date.now()+Math.random().toString(36).slice(2,6), name,
-    counter: parseInt(document.getElementById('addCounter').value)||0,
-    cooked: parseInt(document.getElementById('addCooked').value)||0,
-    diensten: parseInt(document.getElementById('addDiensten').value)||0,
-    bevelvoerder: document.getElementById('addBv').checked });
+  const counter = parseInt(document.getElementById('addCounter').value)||0;
+  const cooked = parseInt(document.getElementById('addCooked').value)||0;
+  const diensten = parseInt(document.getElementById('addDiensten').value)||0;
+  const bevelvoerder = document.getElementById('addBv').checked;
+  people.push({ id: 'p_'+Date.now()+Math.random().toString(36).slice(2,6), name, counter, cooked, diensten, bevelvoerder });
+  history.unshift({
+    ts: Date.now(), dienstDate: null, kokId: null, kokNaam: name,
+    kokCounterSnapshot: null, aantal: 0, aanwezigen: [], aanwezigenIds: [], handmatig: false,
+    type: 'nieuw_lid', beginCounter: counter
+  });
   const fromManage = _addFromManage;
   _addFromManage = false;
   document.getElementById('addOverlay').classList.remove('show');
@@ -814,14 +870,21 @@ function saveAdd() {
 }
 function openManage() { requirePin(doOpenManage); }
 function doOpenManage() {
+  _manageSnapshot = {};
+  people.forEach(p => { _manageSnapshot[p.id] = { counter: p.counter, cooked: p.cooked, diensten: p.diensten }; });
   document.getElementById('manageBody').innerHTML = people.map(p => `
     <div class="edit-row" data-id="${p.id}">
-      <input class="name-in" value="${esc(p.name)}" placeholder="Naam">
-      <input class="num-in" value="${p.counter}" title="Teller" inputmode="numeric">
-      <input class="num-in" value="${p.cooked}" title="Gekookt" inputmode="numeric">
-      <input class="num-in" value="${p.diensten}" title="Diensten" inputmode="numeric">
-      <button class="bv-mini ${p.bevelvoerder?'on':''}" onclick="toggleBvRole(this)" data-bv="${p.bevelvoerder?'1':'0'}">BV</button>
-      <button class="mini" onclick="removePerson('${p.id}')" title="Verwijder">🗑️</button>
+      <div class="edit-row-main">
+        <input class="name-in" value="${esc(p.name)}" placeholder="Naam">
+        <button class="bv-mini ${p.bevelvoerder?'on':''}" onclick="toggleBvRole(this)" data-bv="${p.bevelvoerder?'1':'0'}">BV</button>
+        <button class="mini" onclick="toggleStats(this)" title="Tellers bewerken">✎</button>
+        <button class="mini" onclick="removePerson('${p.id}')" title="Verwijder">🗑️</button>
+      </div>
+      <div class="edit-row-stats">
+        <div class="edit-stat"><label>Teller</label><input class="num-in" value="${p.counter}" inputmode="numeric"></div>
+        <div class="edit-stat"><label>Gekookt</label><input class="num-in" value="${p.cooked}" inputmode="numeric"></div>
+        <div class="edit-stat"><label>Diensten</label><input class="num-in" value="${p.diensten}" inputmode="numeric"></div>
+      </div>
     </div>`).join('') || '<div class="empty-state">Geen personen</div>';
   const backups = JSON.parse(localStorage.getItem(STORE_KEY+'_backups')||'[]');
   document.getElementById('backupList').innerHTML = backups.length
@@ -843,6 +906,12 @@ function toggleBvRole(btn) {
   btn.dataset.bv = on ? '0' : '1';
   btn.classList.toggle('on', !on);
 }
+function toggleStats(btn) {
+  const statsRow = btn.closest('.edit-row').querySelector('.edit-row-stats');
+  const isOpen = statsRow.style.display === 'flex';
+  statsRow.style.display = isOpen ? 'none' : 'flex';
+  btn.textContent = isOpen ? '✎' : '▲';
+}
 function closeManage(){ document.getElementById('manageOverlay').classList.remove('show'); }
 function removePerson(id) {
   const p = people.find(x=>x.id===id);
@@ -852,17 +921,31 @@ function removePerson(id) {
   doOpenManage(); render();
 }
 function saveManage() {
+  const aanpassingen = [];
   document.querySelectorAll('#manageBody .edit-row').forEach(row => {
     const id = row.dataset.id;
     const p = people.find(x=>x.id===id);
     if (p) {
       p.name = row.querySelector('.name-in').value.trim() || p.name;
       const nums = row.querySelectorAll('.num-in');
-      if (nums[0]) p.counter = parseInt(nums[0].value)||0;
-      if (nums[1]) p.cooked = parseInt(nums[1].value)||0;
-      if (nums[2]) p.diensten = parseInt(nums[2].value)||0;
+      const newCounter = parseInt(nums[0]?.value)||0;
+      const newCooked = parseInt(nums[1]?.value)||0;
+      const newDiensten = parseInt(nums[2]?.value)||0;
+      const snap = _manageSnapshot[id];
+      if (snap && (newCounter !== snap.counter || newCooked !== snap.cooked || newDiensten !== snap.diensten)) {
+        aanpassingen.push({ id, name: p.name, from: snap, to: { counter: newCounter, cooked: newCooked, diensten: newDiensten } });
+      }
+      p.counter = newCounter; p.cooked = newCooked; p.diensten = newDiensten;
       p.bevelvoerder = row.querySelector('.bv-mini').dataset.bv === '1';
     }
+  });
+  const now = Date.now();
+  aanpassingen.forEach((a, i) => {
+    history.unshift({
+      ts: now - i, dienstDate: null, kokId: a.id, kokNaam: a.name,
+      kokCounterSnapshot: null, aantal: 0, aanwezigen: [], aanwezigenIds: [], handmatig: false,
+      type: 'aanpassing', from: a.from, to: a.to
+    });
   });
   closeManage(); render(); toast('Lijst opgeslagen');
 }
