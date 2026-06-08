@@ -139,8 +139,8 @@
 <body>
 <header>
   <div class="wrap">
-    <h1>Priklijst</h1>
-    <p>Wie kookt?</p>
+    <h1>Priklijst <span class="badge">WIE KOOKT?</span></h1>
+    <p>Brandweer kookrooster — wie het meest aanwezig is, kookt</p>
   </div>
 </header>
 <div class="wrap">
@@ -576,8 +576,7 @@ function renderDienst() {
     else if (p.bevelvoerder) bvBtn = `<span class="bv-toggle">BV</span>`;
     return `<div class="rosterrow ${isPresent?'present':''}">
         <button class="chk ${isPresent?'on':''}" onclick="togglePresent('${p.id}')">${isPresent?'✓':''}</button>
-        <div class="nm">${esc(p.name)}${p.bevelvoerder?'<span class="role-pill">BV</span>':''}
-          <small>teller ${p.counter} · ${p.cooked}x gekookt</small></div>
+        <div class="nm">${esc(p.name)}${p.bevelvoerder?'<span class="role-pill">BV</span>':''}</div>
         ${bvBtn}
       </div>`;
   }).join('') || '<div class="empty-state">Geen personen. Voeg je ploeg toe.</div>';
