@@ -17,7 +17,7 @@
   header { background: linear-gradient(180deg, var(--steel-light), var(--steel)); color: var(--paper);
     padding: 22px 20px 18px; border-bottom: 5px solid var(--red); position: sticky; top: 0; z-index: 50; box-shadow: 0 4px 14px rgba(0,0,0,0.25); }
   header h1 { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 28px; letter-spacing: 2px; text-transform: uppercase; display: flex; align-items: center; gap: 12px; }
-  header h1 .badge { background: var(--red); color: #fff; font-size: 13px; padding: 3px 9px; border-radius: 3px; letter-spacing: 1px; }
+  .badge { background: var(--red); color: #fff; font-size: 13px; padding: 3px 9px; border-radius: 3px; letter-spacing: 1px; white-space: nowrap; }
   header p { font-size: 13px; color: #b9bcc2; margin-top: 4px; letter-spacing: 0.5px; }
   .wrap { max-width: 920px; margin: 0 auto; padding: 0 16px; }
   .tabs { display: flex; margin: 18px 0 0; border-radius: 9px 9px 0 0; overflow: hidden; }
@@ -65,7 +65,7 @@
   .role-pill { font-size:10px; font-family:'Oswald'; text-transform:uppercase; letter-spacing:0.5px; background:var(--blue); color:#fff; padding:2px 6px; border-radius:10px; margin-left:6px; vertical-align:middle; }
   .mini { background: none; border: none; cursor: pointer; font-size: 14px; color: var(--muted); padding: 4px; border-radius: 4px; }
   .mini:hover { background: var(--paper); color: var(--ink); }
-  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 14px 0 0; padding:0 4px; }
+  .toolbar { position: fixed; bottom: 0; left: 0; right: 0; display: flex; flex-wrap: nowrap; gap: 8px; align-items: center; background: rgba(244,241,234,0.97); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border-top: 2px solid var(--paper-line); padding: 10px 16px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 40; box-shadow: 0 -4px 14px rgba(0,0,0,0.1); }
   .btn { font-family: 'Oswald', sans-serif; letter-spacing: 0.5px; text-transform: uppercase; font-size: 13px; padding: 10px 14px; border-radius: 6px; border: 2px solid var(--steel); background: #fff; color: var(--steel); cursor: pointer; transition: background 0.15s, color 0.15s; text-align:center; }
   .btn:hover { background: var(--steel); color: #fff; }
   .btn.primary { background: var(--steel); color: #fff; }
@@ -133,6 +133,7 @@
     .cooknow .name { font-size: 28px; }
     header h1 { font-size: 22px; }
     tbody td { padding: 8px 5px; font-size: 14px; }
+    .counthint { display: none; }
   }
 </style>
 </head>
@@ -140,8 +141,8 @@
 <header>
   <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
     <div>
-      <h1>Priklijst Victor. <span class="badge">WIE KOOKT?</span></h1>
-      <p>Wie het meest aanwezig is kookt!</p>
+      <h1>Priklijst Victor.</h1>
+      <p style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:5px"><span class="badge">WIE KOOKT?</span><span style="color:#b9bcc2;font-size:13px;letter-spacing:0.5px">Wie het meest aanwezig is kookt!</span></p>
     </div>
     <button onclick="openHelp()" aria-label="Uitleg" style="flex-shrink:0;background:none;border:2px solid rgba(255,255,255,0.4);color:#fff;border-radius:50%;width:36px;height:36px;font-size:18px;font-weight:700;cursor:pointer;line-height:1">?</button>
   </div>
@@ -157,7 +158,7 @@
       <span class="t">Wie is er in dienst?</span>
       <span class="count" id="dienstCount">0 aanwezig</span>
     </div>
-    <div class="hint">Vink aanwezigen aan. Bevelvoerders staan standaard op "kookt niet" — tik het label om per dienst te wisselen.</div>
+    <div class="hint">Vink aanwezigen aan. Bevelvoerders staan standaard op "kookt niet", tik het label om per dienst te wisselen.</div>
     <div class="roster" id="roster"><div class="rosterrow ">
         <button class="chk " onclick="togglePresent(&#39;p0_1780899992530sw24&#39;)"></button>
         <div class="nm">Arjan Hennink
@@ -405,6 +406,7 @@
         <label>Datum dienst</label>
         <input type="date" id="confDate">
       </div>
+      <div id="dienstWarning" style="display:none;margin-top:10px;padding:9px 12px;background:#fdeaea;border:1px solid #f5baba;border-radius:6px;color:var(--red);font-size:13px;font-weight:600;line-height:1.4"></div>
     </div>
     <div class="modal-foot">
       <button class="btn" onclick="closeConfirm()">Annuleren</button>
@@ -679,15 +681,33 @@ function togglePresent(id) {
 function toggleCooks(id) { cooksThisShift[id] = !cooksThisShift[id]; renderDienst(); }
 function clearPresent() { present.clear(); cooksThisShift = {}; renderDienst(); }
 
+function pickFromTied(sorted) {
+  if (!sorted.length) return null;
+  const top = sorted[0];
+  const tsTop = (history.find(h=>h.kokId===top.id)||{ts:0}).ts;
+  const tied = sorted.filter(p => {
+    const ts = (history.find(h=>h.kokId===p.id)||{ts:0}).ts;
+    return p.counter===top.counter && p.cooked===top.cooked && p.diensten===top.diensten && ts===tsTop;
+  });
+  return tied.length > 1 ? tied[Math.floor(Math.random()*tied.length)] : top;
+}
 function startConfirm() {
   if (present.size === 0) { toast('Niemand aangevinkt'); return; }
   const elig = eligibleCooks();
-  selectedKokId = elig.length ? elig[0].id : null;
-  const top = elig[0];
-  document.getElementById('confName').textContent = top ? top.name : 'Niemand (iedereen kookt-niet)';
+  const top = elig.length ? pickFromTied(elig) : null;
+  selectedKokId = top ? top.id : null;
+  document.getElementById('confName').textContent = top ? top.name : 'Niemand (iedereen kookt niet)';
   document.getElementById('confSub').textContent = top
     ? `Teller ${top.counter} · ${top.cooked}x gekookt · ${top.diensten} diensten`
     : 'Vink iemand op "kookt mee" om een kok te kunnen kiezen';
+  const warn = document.getElementById('dienstWarning');
+  const n = present.size;
+  if (n !== 8) {
+    warn.textContent = n < 8
+      ? `Minder personen dan gebruikelijk: ${n} aanwezig (normaal 8).`
+      : `Meer personen dan gebruikelijk: ${n} aanwezig (normaal 8).`;
+    warn.style.display = 'block';
+  } else { warn.style.display = 'none'; }
   // pick list = alle aanwezigen die koken
   const pl = document.getElementById('pickList');
   pl.innerHTML = elig.map(p => `
