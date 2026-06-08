@@ -51,6 +51,7 @@
   .rosterrow .nm small { display:block; font-weight:400; color:var(--muted); font-size:12px; }
   .chk { width:30px; height:30px; border-radius:6px; border:2px solid var(--paper-line); background:#fff; cursor:pointer; font-size:15px; line-height:1; flex:0 0 auto; }
   .chk.on { background:var(--green); border-color:var(--green); color:#fff; }
+  .roster-divider { font-family:'Oswald',sans-serif; font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); padding:10px 8px 4px; border-top:2px solid var(--paper-line); margin-top:4px; }
   .bv-toggle { font-family:'Oswald',sans-serif; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; padding:5px 9px; border-radius:14px; border:1.5px solid var(--paper-line); background:#fff; color:var(--muted); cursor:pointer; flex:0 0 auto; white-space:nowrap; }
   .bv-toggle.cooks { border-color:var(--green); color:var(--green); }
   .bv-toggle.nocook { border-color:var(--blue); color:var(--blue); background:#eef4fb; }
@@ -664,13 +665,15 @@ function updateToolbarLive() {
   const n = present.size;
   const el = document.getElementById('toolbarLive');
   if (!el) return;
-  el.textContent = n + ' aanwezig';
+  el.textContent = n + ' geselecteerd';
   el.className = 'toolbar-live' + (n===0 ? '' : n<8 ? ' under' : n===8 ? ' exact' : ' over');
 }
 function renderDienst() {
   const roster = document.getElementById('roster');
   const sorted = sortAlpha(people);
-  roster.innerHTML = sorted.map(p => {
+  const regular = sorted.filter(p => !p.bevelvoerder);
+  const bvs    = sorted.filter(p => p.bevelvoerder);
+  const makeRow = p => {
     const isPresent = present.has(p.id);
     const cooks = cooksThisShift[p.id];
     let bvBtn = '';
@@ -680,7 +683,10 @@ function renderDienst() {
         <div class="nm">${esc(p.name)}${p.bevelvoerder?'<span class="role-pill">BV</span>':''}</div>
         ${bvBtn}
       </div>`;
-  }).join('') || '<div class="empty-state">Geen personen. Voeg je ploeg toe.</div>';
+  };
+  let html = regular.map(makeRow).join('');
+  if (bvs.length) html += `<div class="roster-divider">Bevelvoerders</div>` + bvs.map(makeRow).join('');
+  roster.innerHTML = html || '<div class="empty-state">Geen personen. Voeg je ploeg toe.</div>';
   const n = present.size;
   const cc = document.getElementById('dienstCount');
   cc.textContent = n + ' aanwezig';
