@@ -1058,7 +1058,7 @@ function requirePin(cb) {
   document.getElementById('pinInput').value = '';
   document.getElementById('pinError').style.display = 'none';
   document.getElementById('pinOverlay').classList.add('show');
-  setTimeout(() => document.getElementById('pinInput').focus(), 50);
+  document.getElementById('pinInput').focus();
 }
 function submitPin() {
   const stored = localStorage.getItem(STORE_KEY+'_pin') || '1234';
