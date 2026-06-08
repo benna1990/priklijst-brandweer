@@ -21,7 +21,7 @@
     background-image: repeating-linear-gradient(0deg, transparent, transparent 31px, var(--paper-line) 31px, var(--paper-line) 32px);
     color: var(--ink); min-height: 100vh; padding: 0 0 90px; }
   header { background: linear-gradient(180deg, var(--steel-light), var(--steel)); color: var(--paper);
-    padding: 22px 20px 18px; border-bottom: 5px solid var(--red); position: sticky; top: 0; z-index: 50; box-shadow: 0 4px 14px rgba(0,0,0,0.25); }
+    padding: calc(env(safe-area-inset-top, 0px) + 22px) 20px 18px; border-bottom: 5px solid var(--red); position: sticky; top: 0; z-index: 50; box-shadow: 0 4px 14px rgba(0,0,0,0.25); }
   header h1 { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 28px; letter-spacing: 2px; text-transform: uppercase; display: flex; align-items: center; gap: 12px; }
   .badge { background: var(--red); color: #fff; font-size: 13px; padding: 3px 9px; border-radius: 3px; letter-spacing: 1px; white-space: nowrap; }
   header p { font-size: 13px; color: #b9bcc2; margin-top: 4px; letter-spacing: 0.5px; }
@@ -41,8 +41,10 @@
   .cooknow.empty::before { content: "📋"; }
   .dienst-head { padding: 16px 18px 8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
   .dienst-head .t { font-family:'Oswald',sans-serif; text-transform:uppercase; letter-spacing:1px; font-size:16px; }
-  .dienst-head .count { background:var(--steel); color:#fff; font-size:13px; padding:3px 10px; border-radius:20px; font-family:'Oswald'; }
-  .dienst-head .count.warn { background:var(--gold); color:var(--ink); }
+  .dienst-head .count { background:var(--steel); color:#fff; font-size:13px; padding:3px 10px; border-radius:20px; font-family:'Oswald'; transition:background 0.2s, color 0.2s; }
+  .dienst-head .count.under { background:var(--red); color:#fff; }
+  .dienst-head .count.exact { background:var(--green); color:#fff; }
+  .dienst-head .count.over  { background:var(--gold); color:var(--ink); }
   .hint { padding: 0 18px 10px; font-size:13px; color:var(--muted); }
   .roster { padding: 4px 10px 12px; }
   .rosterrow { display:flex; align-items:center; gap:10px; padding:9px 8px; border-bottom:1px solid var(--paper-line); border-radius:6px; }
@@ -179,11 +181,6 @@
       <span class="count" id="dienstCount">0 aanwezig</span>
     </div>
     <div class="hint">Vink aanwezigen aan. Bevelvoerders staan standaard op "kookt niet", tik het label om per dienst te wisselen.</div>
-    <div id="dienstBanner" class="cooknow empty" style="display:none;border-radius:0;margin:0">
-      <div class="label">Zou koken bij deze selectie</div>
-      <div class="name" id="dienstBannerName"></div>
-      <div class="meta" id="dienstBannerMeta"></div>
-    </div>
     <div class="roster" id="roster"><div class="rosterrow ">
         <button class="chk " onclick="togglePresent(&#39;p0_1780899992530sw24&#39;)"></button>
         <div class="nm">Arjan Hennink
@@ -686,28 +683,10 @@ function renderDienst() {
         ${bvBtn}
       </div>`;
   }).join('') || '<div class="empty-state">Geen personen. Voeg je ploeg toe.</div>';
-  // Live banner: wie kookt bij huidige selectie
-  const banner = document.getElementById('dienstBanner');
-  const elig = eligibleCooks();
-  const top = elig[0] || null;
-  if (present.size > 0) {
-    banner.style.display = '';
-    if (top) {
-      banner.className = 'cooknow'; banner.style.borderRadius='0'; banner.style.margin='0';
-      document.getElementById('dienstBannerName').textContent = top.name;
-      document.getElementById('dienstBannerMeta').textContent = `Teller ${top.counter} · ${top.cooked}x gekookt · ${top.diensten} diensten`;
-    } else {
-      banner.className = 'cooknow empty'; banner.style.borderRadius='0'; banner.style.margin='0';
-      document.getElementById('dienstBannerName').textContent = 'Niemand kookt';
-      document.getElementById('dienstBannerMeta').textContent = 'Iedereen staat op "kookt niet"';
-    }
-  } else {
-    banner.style.display = 'none';
-  }
   const n = present.size;
   const cc = document.getElementById('dienstCount');
   cc.textContent = n + ' aanwezig';
-  cc.className = 'count' + (n>0 && n<8 ? ' warn' : '');
+  cc.className = 'count' + (n===0 ? '' : n<8 ? ' under' : n===8 ? ' exact' : ' over');
   updateToolbarLive();
 }
 function renderRang() {
@@ -894,14 +873,15 @@ function undoLast() {
 function openAdd() { requirePin(doOpenAdd); }
 function doOpenAdd() {
   const nonBv = people.filter(p => !p.bevelvoerder);
-  const avgCounter = nonBv.length ? Math.round(nonBv.reduce((s,p) => s+p.counter, 0) / nonBv.length) : 0;
+  const avg = k => nonBv.length ? Math.round(nonBv.reduce((s,p) => s+p[k], 0) / nonBv.length) : 0;
+  const avgCounter = avg('counter'), avgCooked = avg('cooked'), avgDiensten = avg('diensten');
   document.getElementById('addName').value='';
   document.getElementById('addCounter').value = avgCounter;
-  document.getElementById('addCooked').value='0';
-  document.getElementById('addDiensten').value='0';
+  document.getElementById('addCooked').value = avgCooked;
+  document.getElementById('addDiensten').value = avgDiensten;
   document.getElementById('addBv').checked=false;
   const hint = document.getElementById('addAvgHint');
-  if (nonBv.length) { hint.textContent = 'Gemiddelde teller huidige collega\'s: ' + avgCounter; hint.style.display = 'block'; }
+  if (nonBv.length) { hint.textContent = `Gemiddeld: teller ${avgCounter} · ${avgCooked}x gekookt · ${avgDiensten} diensten`; hint.style.display = 'block'; }
   else { hint.style.display = 'none'; }
   document.getElementById('addOverlay').classList.add('show');
   setTimeout(()=>document.getElementById('addName').focus(),50);
