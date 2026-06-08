@@ -467,6 +467,24 @@
     </div>
   </div>
 </div>
+<!-- STATS EDIT MODAL -->
+<div class="overlay" id="statsEditOverlay">
+  <div class="modal" style="max-width:320px">
+    <div class="modal-head">Tellers bewerken <button class="x" onclick="closeStatsEdit()">×</button></div>
+    <div class="modal-body">
+      <div id="statsEditTitle" style="font-family:'Oswald';font-size:17px;font-weight:600;margin-bottom:16px"></div>
+      <div class="field"><label>Teller</label><input id="statsEditCounter" inputmode="numeric"></div>
+      <div class="row2">
+        <div class="field"><label>Gekookt</label><input id="statsEditCooked" inputmode="numeric"></div>
+        <div class="field"><label>Diensten</label><input id="statsEditDiensten" inputmode="numeric"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeStatsEdit()">Annuleren</button>
+      <button class="btn primary" onclick="saveStatsEdit()">Opslaan</button>
+    </div>
+  </div>
+</div>
 <!-- PIN MODAL -->
 <div class="overlay" id="pinOverlay">
   <div class="modal" style="max-width:320px">
@@ -844,7 +862,7 @@ function doOpenAdd() {
   setTimeout(()=>document.getElementById('addName').focus(),50);
 }
 var _addFromManage = false;
-var _manageSnapshot = {};
+var _statsEditId = null;
 function closeAdd(){
   document.getElementById('addOverlay').classList.remove('show');
   if (_addFromManage) { _addFromManage = false; doOpenManage(); }
@@ -870,20 +888,13 @@ function saveAdd() {
 }
 function openManage() { requirePin(doOpenManage); }
 function doOpenManage() {
-  _manageSnapshot = {};
-  people.forEach(p => { _manageSnapshot[p.id] = { counter: p.counter, cooked: p.cooked, diensten: p.diensten }; });
   document.getElementById('manageBody').innerHTML = people.map(p => `
     <div class="edit-row" data-id="${p.id}">
       <div class="edit-row-main">
         <input class="name-in" value="${esc(p.name)}" placeholder="Naam">
         <button class="bv-mini ${p.bevelvoerder?'on':''}" onclick="toggleBvRole(this)" data-bv="${p.bevelvoerder?'1':'0'}">BV</button>
-        <button class="mini" onclick="toggleStats(this)" title="Tellers bewerken">✎</button>
+        <button class="mini" onclick="openStatsEdit('${p.id}')" title="Tellers bewerken">✎</button>
         <button class="mini" onclick="removePerson('${p.id}')" title="Verwijder">🗑️</button>
-      </div>
-      <div class="edit-row-stats">
-        <div class="edit-stat"><label>Teller</label><input class="num-in" value="${p.counter}" inputmode="numeric"></div>
-        <div class="edit-stat"><label>Gekookt</label><input class="num-in" value="${p.cooked}" inputmode="numeric"></div>
-        <div class="edit-stat"><label>Diensten</label><input class="num-in" value="${p.diensten}" inputmode="numeric"></div>
       </div>
     </div>`).join('') || '<div class="empty-state">Geen personen</div>';
   const backups = JSON.parse(localStorage.getItem(STORE_KEY+'_backups')||'[]');
@@ -906,11 +917,39 @@ function toggleBvRole(btn) {
   btn.dataset.bv = on ? '0' : '1';
   btn.classList.toggle('on', !on);
 }
-function toggleStats(btn) {
-  const statsRow = btn.closest('.edit-row').querySelector('.edit-row-stats');
-  const isOpen = statsRow.style.display === 'flex';
-  statsRow.style.display = isOpen ? 'none' : 'flex';
-  btn.textContent = isOpen ? '✎' : '▲';
+function openStatsEdit(id) {
+  const p = people.find(x=>x.id===id);
+  if (!p) return;
+  _statsEditId = id;
+  document.getElementById('statsEditTitle').textContent = p.name;
+  document.getElementById('statsEditCounter').value = p.counter;
+  document.getElementById('statsEditCooked').value = p.cooked;
+  document.getElementById('statsEditDiensten').value = p.diensten;
+  document.getElementById('statsEditOverlay').classList.add('show');
+  setTimeout(()=>document.getElementById('statsEditCounter').focus(),50);
+}
+function closeStatsEdit() {
+  document.getElementById('statsEditOverlay').classList.remove('show');
+  _statsEditId = null;
+}
+function saveStatsEdit() {
+  const p = people.find(x=>x.id===_statsEditId);
+  if (!p) return;
+  const newCounter = parseInt(document.getElementById('statsEditCounter').value)||0;
+  const newCooked = parseInt(document.getElementById('statsEditCooked').value)||0;
+  const newDiensten = parseInt(document.getElementById('statsEditDiensten').value)||0;
+  if (newCounter !== p.counter || newCooked !== p.cooked || newDiensten !== p.diensten) {
+    history.unshift({
+      ts: Date.now(), dienstDate: null, kokId: p.id, kokNaam: p.name,
+      kokCounterSnapshot: null, aantal: 0, aanwezigen: [], aanwezigenIds: [], handmatig: false,
+      type: 'aanpassing',
+      from: { counter: p.counter, cooked: p.cooked, diensten: p.diensten },
+      to: { counter: newCounter, cooked: newCooked, diensten: newDiensten }
+    });
+  }
+  p.counter = newCounter; p.cooked = newCooked; p.diensten = newDiensten;
+  closeStatsEdit();
+  save(); toast(p.name + ' bijgewerkt');
 }
 function closeManage(){ document.getElementById('manageOverlay').classList.remove('show'); }
 function removePerson(id) {
@@ -921,31 +960,13 @@ function removePerson(id) {
   doOpenManage(); render();
 }
 function saveManage() {
-  const aanpassingen = [];
   document.querySelectorAll('#manageBody .edit-row').forEach(row => {
     const id = row.dataset.id;
     const p = people.find(x=>x.id===id);
     if (p) {
       p.name = row.querySelector('.name-in').value.trim() || p.name;
-      const nums = row.querySelectorAll('.num-in');
-      const newCounter = parseInt(nums[0]?.value)||0;
-      const newCooked = parseInt(nums[1]?.value)||0;
-      const newDiensten = parseInt(nums[2]?.value)||0;
-      const snap = _manageSnapshot[id];
-      if (snap && (newCounter !== snap.counter || newCooked !== snap.cooked || newDiensten !== snap.diensten)) {
-        aanpassingen.push({ id, name: p.name, from: snap, to: { counter: newCounter, cooked: newCooked, diensten: newDiensten } });
-      }
-      p.counter = newCounter; p.cooked = newCooked; p.diensten = newDiensten;
       p.bevelvoerder = row.querySelector('.bv-mini').dataset.bv === '1';
     }
-  });
-  const now = Date.now();
-  aanpassingen.forEach((a, i) => {
-    history.unshift({
-      ts: now - i, dienstDate: null, kokId: a.id, kokNaam: a.name,
-      kokCounterSnapshot: null, aantal: 0, aanwezigen: [], aanwezigenIds: [], handmatig: false,
-      type: 'aanpassing', from: a.from, to: a.to
-    });
   });
   closeManage(); render(); toast('Lijst opgeslagen');
 }
@@ -1017,7 +1038,7 @@ function openHelp(){ document.getElementById('helpOverlay').classList.add('show'
 function closeHelp(){ document.getElementById('helpOverlay').classList.remove('show'); }
 document.getElementById('addName').addEventListener('keydown',e=>{if(e.key==='Enter')saveAdd();});
 document.getElementById('pinInput').addEventListener('keydown',e=>{if(e.key==='Enter')submitPin();});
-['confirmOverlay','addOverlay','manageOverlay'].forEach(id=>{
+['confirmOverlay','addOverlay','manageOverlay','statsEditOverlay'].forEach(id=>{
   const o=document.getElementById(id);
   o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('show');});
 });
