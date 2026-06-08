@@ -132,7 +132,7 @@
   .confirm-kok .big-name { font-family:'Oswald',sans-serif; font-size:32px; font-weight:700; color:var(--red); margin:6px 0; }
   .confirm-kok .sub { color:var(--muted); font-size:14px; margin-bottom:16px; }
   .pick-label { font-family:'Oswald'; text-transform:uppercase; font-size:12px; letter-spacing:0.5px; color:var(--muted); margin:14px 0 6px; }
-  .pick-list { max-height:200px; overflow-y:auto; border:1px solid var(--paper-line); border-radius:8px; background:#fff; }
+  .pick-list { max-height:min(280px, 35vh); overflow-y:auto; border:1px solid var(--paper-line); border-radius:8px; background:#fff; }
   .pick-row { display:flex; align-items:center; gap:8px; padding:9px 12px; cursor:pointer; border-bottom:1px solid var(--paper-line); }
   .pick-row:last-child { border-bottom:none; }
   .pick-row:hover { background:#f1f8f3; }
@@ -378,9 +378,9 @@
         <tr>
           <th class="rank">#</th>
           <th class="name-col">Naam</th>
-          <th>Teller</th>
-          <th class="hide-mobile">Gekookt</th>
-          <th class="hide-mobile">Diensten</th>
+          <th title="Diensten aanwezig zonder te koken — hoog = eerder aan de beurt">Beurtteller</th>
+          <th class="hide-mobile" title="Hoe vaak totaal gekookt">Gekookt</th>
+          <th class="hide-mobile" title="Hoe vaak totaal aanwezig geweest">Diensten</th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
@@ -415,9 +415,9 @@
       </div>
       <div class="pick-label">Of kies handmatig een andere aanwezige:</div>
       <div class="pick-list" id="pickList"></div>
-      <div class="field" style="margin-top:14px">
-        <label>Datum dienst</label>
-        <input type="date" id="confDate">
+      <div style="margin-top:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <label style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);font-family:'Oswald';white-space:nowrap;margin:0">Datum dienst</label>
+        <input type="date" id="confDate" style="padding:7px 10px;font-size:14px;border:2px solid var(--paper-line);border-radius:6px;font-family:'Barlow';background:#fff;width:auto;flex:0 0 auto">
       </div>
       <div id="dienstWarning" style="display:none;margin-top:10px;padding:9px 12px;background:#fdeaea;border:1px solid #f5baba;border-radius:6px;color:var(--red);font-size:13px;font-weight:600;line-height:1.4"></div>
     </div>
@@ -538,8 +538,16 @@
           Bij het toevoegen van een nieuwe collega worden de <b>gemiddelde tellers</b> van de huidige ploeg automatisch ingevuld. Zo begint iemand niet met een achterstand of voorsprong.
         </div>
         <div style="background:#faf9f5;border-radius:8px;padding:12px 14px;border:1px solid var(--paper-line)">
+          <div style="font-family:'Oswald';text-transform:uppercase;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:8px">Wat betekenen de cijfers?</div>
+          <div style="display:flex;flex-direction:column;gap:8px;font-size:14px">
+            <div><b>Beurtteller</b> — telt op elke dienst dat je aanwezig bent, en gaat na het koken terug naar nul. Hoe hoger, hoe langer je niet hebt gekookt — die kookt als eerste.</div>
+            <div><b>Gekookt</b> — hoe vaak je in totaal ooit hebt gekookt. Wordt gebruikt als tiebreaker: wie het minst heeft gekookt gaat voor.</div>
+            <div><b>Diensten</b> — hoe vaak je totaal aanwezig bent geweest. Ook tiebreaker: wie de meeste diensten heeft gedraaid gaat voor bij gelijke stand.</div>
+          </div>
+        </div>
+        <div style="background:#faf9f5;border-radius:8px;padding:12px 14px;border:1px solid var(--paper-line)">
           <div style="font-family:'Oswald';text-transform:uppercase;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:8px">Bij gelijkstand</div>
-          Als meerdere mensen dezelfde teller hebben, beslist de app in deze volgorde:
+          Als meerdere mensen dezelfde beurtteller hebben, beslist de app in deze volgorde:
           <ol style="margin:8px 0 0 18px;display:flex;flex-direction:column;gap:4px;font-size:14px">
             <li>Wie het minste <b>totaal gekookt</b> heeft</li>
             <li>Wie de meeste <b>diensten</b> heeft gedraaid</li>
@@ -697,7 +705,7 @@ function renderRang() {
     cn.className = 'cooknow';
     cn.innerHTML = `<div class="label">Volgende kok (op basis van ranglijst)</div>
       <div class="name">${esc(next.name)}</div>
-      <div class="meta">Teller ${next.counter} · ${next.cooked}x gekookt · ${next.diensten} diensten</div>`;
+      <div class="meta">Beurtteller ${next.counter} · ${next.cooked}× gekookt · ${next.diensten} diensten gedraaid</div>`;
   }
   document.getElementById('emptystate').style.display = people.length ? 'none' : 'block';
   let rows = regular.map((p, idx) => `
@@ -786,7 +794,7 @@ function startConfirm() {
   selectedKokId = top ? top.id : null;
   document.getElementById('confName').textContent = top ? top.name : 'Niemand (iedereen kookt niet)';
   document.getElementById('confSub').textContent = top
-    ? `Teller ${top.counter} · ${top.cooked}x gekookt · ${top.diensten} diensten`
+    ? `Beurtteller ${top.counter} · ${top.cooked}× gekookt · ${top.diensten} diensten gedraaid`
     : 'Vink iemand op "kookt mee" om een kok te kunnen kiezen';
   const warn = document.getElementById('dienstWarning');
   const n = present.size;
@@ -802,7 +810,7 @@ function startConfirm() {
     <div class="pick-row ${p.id===selectedKokId?'sel':''}" onclick="pickKok('${p.id}', this)">
       <span class="dot"></span>
       <span class="pn">${esc(p.name)}</span>
-      <span class="ps">teller ${p.counter} · ${p.cooked}x</span>
+      <span class="ps">${p.counter} pt. · ${p.cooked}× gekookt</span>
     </div>`).join('') || '<div style="padding:14px;color:var(--muted)">Geen kandidaten — iedereen staat op "kookt niet".</div>';
   document.getElementById('confDate').value = new Date().toISOString().slice(0,10);
   document.getElementById('confirmOverlay').classList.add('show');
@@ -813,7 +821,7 @@ function pickKok(id, el) {
   el.classList.add('sel');
   const p = people.find(x=>x.id===id);
   document.getElementById('confName').textContent = p.name;
-  document.getElementById('confSub').textContent = `Teller ${p.counter} · ${p.cooked}x gekookt · ${p.diensten} diensten`;
+  document.getElementById('confSub').textContent = `Beurtteller ${p.counter} · ${p.cooked}× gekookt · ${p.diensten} diensten gedraaid`;
 }
 function closeConfirm(){ document.getElementById('confirmOverlay').classList.remove('show'); }
 function confirmCommit() {
