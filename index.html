@@ -54,8 +54,10 @@
   .bv-toggle { font-family:'Oswald',sans-serif; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; padding:5px 9px; border-radius:14px; border:1.5px solid var(--paper-line); background:#fff; color:var(--muted); cursor:pointer; flex:0 0 auto; white-space:nowrap; }
   .bv-toggle.cooks { border-color:var(--green); color:var(--green); }
   .bv-toggle.nocook { border-color:var(--blue); color:var(--blue); background:#eef4fb; }
-  .toolbar-live { font-family:'Oswald',sans-serif; font-size:14px; padding:5px 10px; border-radius:16px; background:var(--steel); color:#fff; letter-spacing:0.5px; white-space:nowrap; }
-  .toolbar-live.warn { background:var(--gold); color:var(--ink); }
+  .toolbar-live { font-family:'Oswald',sans-serif; font-size:14px; padding:5px 10px; border-radius:16px; background:var(--steel); color:#fff; letter-spacing:0.5px; white-space:nowrap; transition:background 0.2s, color 0.2s; }
+  .toolbar-live.under { background:var(--red); color:#fff; }
+  .toolbar-live.exact { background:var(--green); color:#fff; }
+  .toolbar-live.over  { background:var(--gold); color:var(--ink); }
   .edit-row-main { display:flex; align-items:center; gap:8px; }
   .edit-row-stats { padding:8px 0 4px; display:none; gap:10px; }
   .edit-stat { display:flex; flex-direction:column; align-items:center; gap:2px; }
@@ -663,7 +665,7 @@ function updateToolbarLive() {
   const el = document.getElementById('toolbarLive');
   if (!el) return;
   el.textContent = n + ' aanwezig';
-  el.className = 'toolbar-live' + (n > 0 && n !== 8 ? ' warn' : '');
+  el.className = 'toolbar-live' + (n===0 ? '' : n<8 ? ' under' : n===8 ? ' exact' : ' over');
 }
 function renderDienst() {
   const roster = document.getElementById('roster');
