@@ -738,10 +738,11 @@ function renderHist() {
     const d = h.dienstDate ? new Date(h.dienstDate + 'T12:00:00') : new Date(h.ts);
     const datum = d.toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
     const type = h.type || 'dienst';
+    const delBtn = `<button class="btn ghost hist-undo" onclick="removeHistEntry(${i})" title="Verwijder uit geschiedenis" style="font-size:14px;padding:5px 9px">🗑</button>`;
     if (type === 'nieuw_lid') {
       return `<div class="hist-item hist-nieuw-lid">
         <div class="hist-type-badge">👤 Nieuwe collega</div>
-        <div class="top"><span class="kok-alt">${esc(h.kokNaam)}</span><span class="date">${datum}</span></div>
+        <div class="top"><span class="kok-alt">${esc(h.kokNaam)}</span><span class="date">${datum}</span>${delBtn}</div>
         <div class="det">Begin-teller: ${h.beginCounter ?? 0}</div>
       </div>`;
     }
@@ -754,15 +755,15 @@ function renderHist() {
       }
       return `<div class="hist-item hist-aanpassing">
         <div class="hist-type-badge">✏️ Handmatige aanpassing</div>
-        <div class="top"><span class="kok-alt">${esc(h.kokNaam)}</span><span class="date">${datum}</span></div>
+        <div class="top"><span class="kok-alt">${esc(h.kokNaam)}</span><span class="date">${datum}</span>${delBtn}</div>
         <div class="det">${changes.join(' · ') || 'Gewijzigd'}</div>
       </div>`;
     }
-    const undo = (i===0) ? `<button class="btn ghost hist-undo" onclick="undoLast()">↩ Maak ongedaan</button>` : '';
+    const undoBtn = `<button class="btn ghost hist-undo" onclick="undoAt(${i})" title="Maak ongedaan">↩</button>`;
     return `<div class="hist-item">
       <div class="top">
         <span class="kok">${esc(h.kokNaam)}</span>
-        <span class="date">${datum}</span>${undo}
+        <span class="date">${datum}</span>${undoBtn}
       </div>
       <div class="det">${h.aantal} aanwezig${h.handmatig?' · handmatig gekozen':''}</div>
       <div class="att">${h.aanwezigen.map(esc).join(', ')}</div>
@@ -855,17 +856,18 @@ function confirmCommit() {
   render();
   toast(kok ? `${kok.name} kookt, dienst verwerkt` : 'Dienst verwerkt (geen kok)');
 }
-function undoLast() {
-  if (!history.length) return;
+function undoAt(index) {
+  if (index < 0 || index >= history.length) return;
   requirePin(() => {
-    const h = history[0];
+    const h = history[index];
     const d = h.dienstDate ? new Date(h.dienstDate+'T12:00:00') : new Date(h.ts);
     const datumLbl = d.toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short'});
+    const oudWaarschuwing = index > 0 ? '\n⚠️ Let op: dit is niet de meest recente dienst — tellers kunnen iets uit balans raken.' : '';
     const msg = `Dienst van ${datumLbl} ongedaan maken?\n\n`
       + `• Beurtteller van alle ${h.aanwezigenIds.length} aanwezigen gaat −1\n`
       + `• Diensten van alle aanwezigen gaat −1\n`
       + (h.kokId ? `• Kookbeurt van ${h.kokNaam} wordt teruggedraaid\n` : '')
-      + `\nBedoeling was een andere kok aanwijzen? Annuleer, pas handmatig de tellers aan via ✎ in de beheerlijst.`;
+      + oudWaarschuwing;
     if (!confirm(msg)) return;
     h.aanwezigenIds.forEach(id => {
       const p = people.find(x=>x.id===id);
@@ -878,10 +880,17 @@ function undoLast() {
         if (h.kokCounterSnapshot != null) k.counter = h.kokCounterSnapshot;
       }
     }
-    history.shift();
+    history.splice(index, 1);
     render();
-    toast('Laatste dienst ongedaan gemaakt');
+    toast('Dienst ongedaan gemaakt');
   });
+}
+function undoLast() { undoAt(0); }
+function removeHistEntry(index) {
+  if (!confirm('Dit logitem verwijderen uit de geschiedenis?\n(Tellers worden niet aangepast.)')) return;
+  history.splice(index, 1);
+  render();
+  toast('Verwijderd uit geschiedenis');
 }
 function openAdd() { requirePin(doOpenAdd); }
 function doOpenAdd() {
