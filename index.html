@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<!-- saved from url=(0057)file:///Users/benjaminootjers/Downloads/priklijst-v3.html -->
+<html lang="nl"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Priklijst — Kookrooster Brandweer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow:wght@400;500;600&display=swap');
+  :root {
+    --red: #c1272d; --red-dark: #8f1c20; --ink: #1a1a1a; --paper: #f4f1ea; --paper-line: #ddd7c8;
+    --steel: #2b2f36; --steel-light: #3a4049; --gold: #e6a817; --green: #2f8a4e; --blue: #2d6fc1; --muted: #7a756a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Barlow', sans-serif; background: var(--paper);
+    background-image: repeating-linear-gradient(0deg, transparent, transparent 31px, var(--paper-line) 31px, var(--paper-line) 32px);
+    color: var(--ink); min-height: 100vh; padding: 0 0 90px; }
+  header { background: linear-gradient(180deg, var(--steel-light), var(--steel)); color: var(--paper);
+    padding: 22px 20px 18px; border-bottom: 5px solid var(--red); position: sticky; top: 0; z-index: 50; box-shadow: 0 4px 14px rgba(0,0,0,0.25); }
+  header h1 { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 28px; letter-spacing: 2px; text-transform: uppercase; display: flex; align-items: center; gap: 12px; }
+  header h1 .badge { background: var(--red); color: #fff; font-size: 13px; padding: 3px 9px; border-radius: 3px; letter-spacing: 1px; }
+  header p { font-size: 13px; color: #b9bcc2; margin-top: 4px; letter-spacing: 0.5px; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 0 16px; }
+  .tabs { display: flex; margin: 18px 0 0; border-radius: 9px 9px 0 0; overflow: hidden; }
+  .tab { flex: 1; padding: 13px; text-align: center; cursor: pointer; font-family: 'Oswald', sans-serif; text-transform: uppercase;
+    letter-spacing: 1px; font-size: 14px; background: #e7e2d6; color: var(--muted); border: none; transition: all 0.15s; }
+  .tab.active { background: #fff; color: var(--ink); box-shadow: inset 0 3px 0 var(--red); }
+  .panel { background: #fff; border-radius: 0 0 10px 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); border: 1px solid var(--paper-line); border-top: none; overflow: hidden; }
+  .panel.hidden { display: none; }
+  .cooknow { margin: 0; background: linear-gradient(135deg, var(--red), var(--red-dark)); color: #fff; padding: 20px 22px; position: relative; overflow: hidden; }
+  .cooknow::before { content: "🔥"; position: absolute; right: -10px; top: -18px; font-size: 120px; opacity: 0.12; transform: rotate(12deg); }
+  .cooknow .label { font-family: 'Oswald', sans-serif; text-transform: uppercase; letter-spacing: 3px; font-size: 13px; opacity: 0.85; }
+  .cooknow .name { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 34px; line-height: 1.05; margin: 4px 0 8px; }
+  .cooknow .meta { font-size: 14px; opacity: 0.9; }
+  .cooknow.empty { background: var(--steel); }
+  .cooknow.empty::before { content: "📋"; }
+  .dienst-head { padding: 16px 18px 8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .dienst-head .t { font-family:'Oswald',sans-serif; text-transform:uppercase; letter-spacing:1px; font-size:16px; }
+  .dienst-head .count { background:var(--steel); color:#fff; font-size:13px; padding:3px 10px; border-radius:20px; font-family:'Oswald'; }
+  .dienst-head .count.warn { background:var(--gold); color:var(--ink); }
+  .hint { padding: 0 18px 10px; font-size:13px; color:var(--muted); }
+  .roster { padding: 4px 10px 12px; }
+  .rosterrow { display:flex; align-items:center; gap:10px; padding:9px 8px; border-bottom:1px solid var(--paper-line); border-radius:6px; }
+  .rosterrow.present { background:#f1f8f3; }
+  .rosterrow .nm { flex:1; font-weight:600; font-size:15px; }
+  .rosterrow .nm small { display:block; font-weight:400; color:var(--muted); font-size:12px; }
+  .chk { width:30px; height:30px; border-radius:6px; border:2px solid var(--paper-line); background:#fff; cursor:pointer; font-size:15px; line-height:1; flex:0 0 auto; }
+  .chk.on { background:var(--green); border-color:var(--green); color:#fff; }
+  .bv-toggle { font-family:'Oswald',sans-serif; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; padding:5px 9px; border-radius:14px; border:1.5px solid var(--paper-line); background:#fff; color:var(--muted); cursor:pointer; flex:0 0 auto; white-space:nowrap; }
+  .bv-toggle.cooks { border-color:var(--green); color:var(--green); }
+  .bv-toggle.nocook { border-color:var(--blue); color:var(--blue); background:#eef4fb; }
+  .dienst-actions { padding:12px 16px; background:#faf9f5; border-top:1px solid var(--paper-line); display:flex; gap:10px; }
+  .dienst-actions .btn { flex:1; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { background: var(--steel); color: #fff; font-family: 'Oswald', sans-serif; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; font-size: 12px; padding: 11px 8px; text-align: center; white-space: nowrap; }
+  thead th.name-col { text-align: left; padding-left: 16px; }
+  tbody td { padding: 9px 8px; text-align: center; border-bottom: 1px solid var(--paper-line); font-size: 15px; }
+  tbody td.name-col { text-align: left; padding-left: 16px; font-weight: 600; }
+  tbody tr:nth-child(even) { background: #faf9f5; }
+  tbody tr.next-cook { background: #fdeaea !important; }
+  tbody tr.next-cook td.name-col::before { content: "🔥 "; }
+  .rank { font-family: 'Oswald', sans-serif; color: var(--muted); font-size: 13px; width: 28px; }
+  .counter { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 20px; color: var(--red); }
+  .substat { color: var(--muted); font-size: 13px; }
+  .stamb { font-size: 13px; color: var(--muted); }
+  .role-pill { font-size:10px; font-family:'Oswald'; text-transform:uppercase; letter-spacing:0.5px; background:var(--blue); color:#fff; padding:2px 6px; border-radius:10px; margin-left:6px; vertical-align:middle; }
+  .mini { background: none; border: none; cursor: pointer; font-size: 14px; color: var(--muted); padding: 4px; border-radius: 4px; }
+  .mini:hover { background: var(--paper); color: var(--ink); }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 14px 0 0; padding:0 4px; }
+  .btn { font-family: 'Oswald', sans-serif; letter-spacing: 0.5px; text-transform: uppercase; font-size: 13px; padding: 10px 14px; border-radius: 6px; border: 2px solid var(--steel); background: #fff; color: var(--steel); cursor: pointer; transition: background 0.15s, color 0.15s; text-align:center; }
+  .btn:hover { background: var(--steel); color: #fff; }
+  .btn.primary { background: var(--steel); color: #fff; }
+  .btn.primary:hover { background: var(--ink); }
+  .btn.gold { background:var(--gold); border-color:var(--gold); color:var(--ink); }
+  .btn.gold:hover { background:#cf9410; }
+  .btn.danger { border-color: var(--red); color: var(--red); }
+  .btn.danger:hover { background: var(--red); color: #fff; }
+  .btn.ghost { border-color:var(--paper-line); color:var(--muted); }
+  .btn.green { background:var(--green); border-color:var(--green); color:#fff; }
+  .btn.green:hover { background:#256e3e; }
+  .spacer { flex: 1; }
+  .counthint { font-size: 13px; color: var(--muted); }
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
+  .empty-state .big { font-size: 40px; margin-bottom: 10px; }
+  /* HISTORY */
+  .hist-item { padding:14px 18px; border-bottom:1px solid var(--paper-line); }
+  .hist-item .top { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .hist-item .kok { font-family:'Oswald',sans-serif; font-size:18px; font-weight:600; }
+  .hist-item .kok::before { content:"🔥 "; }
+  .hist-item .date { color:var(--muted); font-size:13px; }
+  .hist-item .det { font-size:13px; color:var(--muted); margin-top:4px; }
+  .hist-item .att { font-size:13px; color:var(--ink); margin-top:6px; line-height:1.5; }
+  .hist-undo { float:right; }
+  /* MODAL */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+  .overlay.show { display: flex; }
+  .modal { background: var(--paper); border-radius: 12px; max-width: 480px; width: 100%; max-height: 86vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+  .modal-head { background: var(--steel); color: #fff; padding: 16px 20px; border-radius: 12px 12px 0 0; font-family: 'Oswald', sans-serif; text-transform: uppercase; letter-spacing: 1px; font-size: 17px; display: flex; justify-content: space-between; align-items: center; position:sticky; top:0; }
+  .modal-head .x { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
+  .modal-body { padding: 18px 20px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 4px; font-family: 'Oswald', sans-serif; }
+  .field input { width: 100%; padding: 10px 12px; font-size: 15px; border: 2px solid var(--paper-line); border-radius: 6px; font-family: 'Barlow'; background: #fff; }
+  .field input:focus { outline: none; border-color: var(--steel); }
+  .checkline { display:flex; align-items:center; gap:8px; font-size:14px; cursor:pointer; }
+  .checkline input { width:auto; }
+  .row2 { display: flex; gap: 10px; }
+  .row2 .field { flex: 1; }
+  .modal-foot { padding: 0 20px 20px; display: flex; gap: 10px; }
+  .modal-foot .btn { flex: 1; }
+  .edit-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--paper-line); }
+  .edit-row input.name-in { flex: 1; padding: 7px 9px; border: 1px solid var(--paper-line); border-radius: 5px; font-family:'Barlow'; }
+  .edit-row input.stamb-in { flex: 0 0 70px; padding: 7px 9px; border: 1px solid var(--paper-line); border-radius: 5px; font-family:'Barlow'; }
+  .edit-row .bv-mini { flex:0 0 auto; font-size:11px; font-family:'Oswald'; text-transform:uppercase; padding:6px 8px; border-radius:12px; border:1.5px solid var(--paper-line); background:#fff; color:var(--muted); cursor:pointer; }
+  .edit-row .bv-mini.on { border-color:var(--blue); color:#fff; background:var(--blue); }
+  /* CONFIRM KOK */
+  .confirm-kok { text-align:center; }
+  .confirm-kok .big-name { font-family:'Oswald',sans-serif; font-size:32px; font-weight:700; color:var(--red); margin:6px 0; }
+  .confirm-kok .sub { color:var(--muted); font-size:14px; margin-bottom:16px; }
+  .pick-label { font-family:'Oswald'; text-transform:uppercase; font-size:12px; letter-spacing:0.5px; color:var(--muted); margin:14px 0 6px; }
+  .pick-list { max-height:200px; overflow-y:auto; border:1px solid var(--paper-line); border-radius:8px; background:#fff; }
+  .pick-row { display:flex; align-items:center; gap:8px; padding:9px 12px; cursor:pointer; border-bottom:1px solid var(--paper-line); }
+  .pick-row:last-child { border-bottom:none; }
+  .pick-row:hover { background:#f1f8f3; }
+  .pick-row.sel { background:#fdeaea; }
+  .pick-row .pn { flex:1; font-weight:600; }
+  .pick-row .ps { font-size:12px; color:var(--muted); }
+  .pick-row .dot { width:16px; height:16px; border-radius:50%; border:2px solid var(--paper-line); flex:0 0 auto; }
+  .pick-row.sel .dot { background:var(--red); border-color:var(--red); }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--ink); color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 14px; opacity: 0; pointer-events: none; transition: all 0.3s; z-index: 200; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  @media (max-width: 640px) {
+    .hide-mobile { display: none; }
+    .cooknow .name { font-size: 28px; }
+    header h1 { font-size: 22px; }
+    tbody td { padding: 8px 5px; font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Priklijst <span class="badge">KOOK</span></h1>
+    <p>Brandweer kookrooster — wie het meest aanwezig is, kookt</p>
+  </div>
+</header>
+<div class="wrap">
+  <div class="tabs">
+    <button class="tab active" id="tabDienst" onclick="setMode(&#39;dienst&#39;)">Dienst</button>
+    <button class="tab" id="tabRang" onclick="setMode(&#39;rang&#39;)">Ranglijst</button>
+    <button class="tab" id="tabHist" onclick="setMode(&#39;hist&#39;)">Historie</button>
+  </div>
+  <div class="panel" id="panelDienst">
+    <div class="dienst-head">
+      <span class="t">Wie is er in dienst?</span>
+      <span class="count" id="dienstCount">0 aanwezig</span>
+    </div>
+    <div class="hint">Vink aanwezigen aan. Bevelvoerders staan standaard op "kookt niet" — tik het label om per dienst te wisselen.</div>
+    <div class="roster" id="roster"><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p0_1780899992530sw24&#39;)"></button>
+        <div class="nm">Arjan Hennink
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p1_1780899992530ua8t&#39;)"></button>
+        <div class="nm">Barry Douma
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p2_1780899992530ncrk&#39;)"></button>
+        <div class="nm">Barry Fidder
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p3_1780899992530uh2m&#39;)"></button>
+        <div class="nm">Bas Schermer
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p4_1780899992530t7r5&#39;)"></button>
+        <div class="nm">Benjamin Ootjers
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p5_17808999925309qp1&#39;)"></button>
+        <div class="nm">Berend Gulien
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p6_1780899992530gqk0&#39;)"></button>
+        <div class="nm">Borre Combee
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p7_17808999925305x90&#39;)"></button>
+        <div class="nm">Brian Bruist
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p8_1780899992530bk60&#39;)"></button>
+        <div class="nm">Brian Clarkson
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p9_1780899992530f1p9&#39;)"></button>
+        <div class="nm">Dave Davio
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p10_1780899992530rvjk&#39;)"></button>
+        <div class="nm">Deniz Akin
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p11_178089999253072hv&#39;)"></button>
+        <div class="nm">Emma Reijmerink
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p12_17808999925305ghx&#39;)"></button>
+        <div class="nm">Eric Huibers
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p13_1780899992530cwj5&#39;)"></button>
+        <div class="nm">Gijs Nijland
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p14_17808999925301w61&#39;)"></button>
+        <div class="nm">Jacob Appelman
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p15_1780899992530dzmt&#39;)"></button>
+        <div class="nm">Jimmy Hendriks
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p16_17808999925308ecr&#39;)"></button>
+        <div class="nm">Kasper Schekkerman
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p17_1780899992530mdy0&#39;)"></button>
+        <div class="nm">Marijn Doesburg
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p18_1780899992530blql&#39;)"></button>
+        <div class="nm">Maurice Dorsman
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p19_1780899992530c4ie&#39;)"></button>
+        <div class="nm">Merel Atia
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p20_1780899992530dtfa&#39;)"></button>
+        <div class="nm">Michel Uhlenkamp
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p21_1780899992530blpg&#39;)"></button>
+        <div class="nm">Michiel Muller
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p22_17808999925304or1&#39;)"></button>
+        <div class="nm">Miranda van der Kroft
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p23_17808999925305wow&#39;)"></button>
+        <div class="nm">Mitchell van den Berg
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p38_178089999253005s3&#39;)"></button>
+        <div class="nm">Nick v/d Ven
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p24_1780899992530v1sy&#39;)"></button>
+        <div class="nm">Niels Berndsen
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p25_178089999253079yv&#39;)"></button>
+        <div class="nm">Rene Butter
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p26_1780899992530j1ib&#39;)"></button>
+        <div class="nm">Roy Brinkman
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p27_1780899992530s82q&#39;)"></button>
+        <div class="nm">Roy Meijerink
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p28_17808999925308wqr&#39;)"></button>
+        <div class="nm">Said Lahri
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p29_1780899992530tf5c&#39;)"></button>
+        <div class="nm">Sam de Boer
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p30_1780899992530xbji&#39;)"></button>
+        <div class="nm">Sebastiaan Hoffman
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p31_1780899992530jp8s&#39;)"></button>
+        <div class="nm">Stefan Verbeek
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p32_1780899992530pe6b&#39;)"></button>
+        <div class="nm">Suraj O'Neil
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p33_1780899992530tivb&#39;)"></button>
+        <div class="nm">Tjalle de Fouw
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p34_1780899992530svxp&#39;)"></button>
+        <div class="nm">Tom Rinkel
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p35_1780899992530p9vc&#39;)"></button>
+        <div class="nm">Tom Schruijer
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p36_1780899992530kxsx&#39;)"></button>
+        <div class="nm">Vincent Lugtenaar
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div><div class="rosterrow ">
+        <button class="chk " onclick="togglePresent(&#39;p37_1780899992530g7qk&#39;)"></button>
+        <div class="nm">Waldo Oosterhoff
+          <small>teller 0 · 0x gekookt</small></div>
+        
+      </div></div>
+    <div class="dienst-actions">
+      <button class="btn ghost" onclick="clearPresent()">Wis selectie</button>
+      <button class="btn gold" onclick="startConfirm()">Bepaal kok →</button>
+    </div>
+  </div>
+  <div class="panel hidden" id="panelRang">
+    <div id="cooknow" class="cooknow"></div>
+    <table>
+      <thead>
+        <tr>
+          <th class="rank">#</th>
+          <th class="name-col">Naam</th>
+          <th>Teller</th>
+          <th class="hide-mobile">Gekookt</th>
+          <th class="hide-mobile">Diensten</th>
+          <th class="hide-mobile">Stamb.</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div id="emptystate" class="empty-state" style="display:none">
+      <div class="big">🍳</div>
+      Nog geen personen. Voeg je ploeg toe met <b>+ Persoon</b>.
+    </div>
+  </div>
+  <div class="panel hidden" id="panelHist">
+    <div id="histList"></div>
+    <div id="histEmpty" class="empty-state"><div class="big">📜</div>Nog geen verwerkte diensten.</div>
+  </div>
+  <div class="toolbar">
+    <button class="btn primary" onclick="openAdd()">+ Persoon</button>
+    <button class="btn" onclick="openManage()">Lijst beheren</button>
+    <div class="spacer"></div>
+    <span class="counthint" id="counthint">39 personen · 0 bevelvoerder(s)</span>
+  </div>
+</div>
+<!-- CONFIRM KOK MODAL -->
+<div class="overlay" id="confirmOverlay">
+  <div class="modal">
+    <div class="modal-head">Wie kookt? <button class="x" onclick="closeConfirm()">×</button></div>
+    <div class="modal-body">
+      <div class="confirm-kok">
+        <div style="font-family:&#39;Oswald&#39;;text-transform:uppercase;font-size:12px;letter-spacing:1px;color:var(--muted)">Voorgesteld op basis van ranglijst</div>
+        <div class="big-name" id="confName">—</div>
+        <div class="sub" id="confSub"></div>
+      </div>
+      <div class="pick-label">Of kies handmatig een andere aanwezige:</div>
+      <div class="pick-list" id="pickList"></div>
+      <div class="field" style="margin-top:14px">
+        <label>Datum dienst</label>
+        <input type="date" id="confDate">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeConfirm()">Annuleren</button>
+      <button class="btn green" onclick="confirmCommit()">Bevestig &amp; verwerk</button>
+    </div>
+  </div>
+</div>
+<!-- ADD MODAL -->
+<div class="overlay" id="addOverlay">
+  <div class="modal">
+    <div class="modal-head">Persoon toevoegen <button class="x" onclick="closeAdd()">×</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Naam</label><input id="addName" placeholder="Voor- en achternaam" autocomplete="off"></div>
+      <div class="row2">
+        <div class="field"><label>Stamboeknummer</label><input id="addStamb" placeholder="optioneel" inputmode="numeric"></div>
+        <div class="field"><label>Begin-teller</label><input id="addCounter" value="0" inputmode="numeric"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Al gekookt</label><input id="addCooked" value="0" inputmode="numeric"></div>
+        <div class="field"><label>Diensten totaal</label><input id="addDiensten" value="0" inputmode="numeric"></div>
+      </div>
+      <div class="field"><label class="checkline"><input type="checkbox" id="addBv"> Is bevelvoerder (kookt standaard niet)</label></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeAdd()">Annuleren</button>
+      <button class="btn primary" onclick="saveAdd()">Toevoegen</button>
+    </div>
+  </div>
+</div>
+<!-- MANAGE MODAL -->
+<div class="overlay" id="manageOverlay">
+  <div class="modal">
+    <div class="modal-head">Lijst beheren <button class="x" onclick="closeManage()">×</button></div>
+    <div class="modal-body" id="manageBody"></div>
+    <div style="padding:12px 20px;border-top:1px solid var(--paper-line)">
+      <div class="pick-label" style="margin:0 0 8px">Auto-backups</div>
+      <div id="backupList"></div>
+    </div>
+    <div style="padding:0 20px 16px;border-top:1px solid var(--paper-line);margin-top:12px">
+      <div class="pick-label" style="margin:12px 0 6px">PIN wijzigen</div>
+      <div style="display:flex;gap:8px">
+        <input id="newPinInput" type="password" maxlength="6" inputmode="numeric" placeholder="Nieuwe PIN (min. 4 cijfers)" style="flex:1;padding:8px 10px;border:1.5px solid var(--paper-line);border-radius:5px;font-family:'Barlow';font-size:14px">
+        <button class="btn ghost" onclick="changePin()">Opslaan</button>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn danger" onclick="resetAll()">Tellers resetten</button>
+      <button class="btn primary" onclick="saveManage()">Opslaan</button>
+    </div>
+  </div>
+</div>
+<!-- PIN MODAL -->
+<div class="overlay" id="pinOverlay">
+  <div class="modal" style="max-width:320px">
+    <div class="modal-head">Beveiligd <button class="x" onclick="closePinOverlay()">×</button></div>
+    <div class="modal-body">
+      <div class="field">
+        <label>PIN-code</label>
+        <input type="password" id="pinInput" maxlength="6" inputmode="numeric" placeholder="••••" autocomplete="off">
+      </div>
+      <div id="pinError" style="color:var(--red);font-size:13px;margin-top:-8px;display:none">Verkeerde PIN — probeer opnieuw</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closePinOverlay()">Annuleren</button>
+      <button class="btn primary" onclick="submitPin()">Bevestigen</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const STORE_KEY = 'priklijst_brandweer_v3';
+const SEED = [
+  "Arjan Hennink","Barry Douma","Barry Fidder","Bas Schermer","Benjamin Ootjers",
+  "Berend Gulien","Borre Combee","Brian Bruist","Brian Clarkson","Dave Davio",
+  "Deniz Akin","Emma Reijmerink","Eric Huibers","Gijs Nijland","Jacob Appelman",
+  "Jimmy Hendriks","Kasper Schekkerman","Marijn Doesburg","Maurice Dorsman","Merel Atia",
+  "Michel Uhlenkamp","Michiel Muller","Miranda van der Kroft","Mitchell van den Berg","Nick v/d Ven",
+  "Niels Berndsen","Rene Butter","Roy Brinkman","Roy Meijerink","Said Lahri",
+  "Sam de Boer","Sebastiaan Hoffman","Stefan Verbeek","Suraj O'Neil","Tjalle de Fouw",
+  "Tom Rinkel","Tom Schruijer","Vincent Lugtenaar","Waldo Oosterhoff"
+];
+let mode = 'dienst';
+let state = load();
+let people = state.people;
+let history = state.history;
+let present = new Set();
+let cooksThisShift = {};
+let selectedKokId = null;
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) { const d = JSON.parse(raw); return { people: d.people||[], history: d.history||[] }; }
+  } catch(e) {}
+  return {
+    people: SEED.map((n,i) => ({ id: 'p'+i+'_'+Date.now()+Math.random().toString(36).slice(2,6),
+      name: n, stamb: '', counter: 0, cooked: 0, diensten: 0, bevelvoerder: false })),
+    history: []
+  };
+}
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify({people, history})); } catch(e) {} }
+
+function sortForCook(arr) {
+  return [...arr].sort((a,b) => {
+    if (b.counter !== a.counter) return b.counter - a.counter;
+    if (a.cooked !== b.cooked) return a.cooked - b.cooked;
+    if (b.diensten !== a.diensten) return b.diensten - a.diensten;
+    return (parseInt(b.stamb)||0) - (parseInt(a.stamb)||0);
+  });
+}
+function sortAlpha(arr) {
+  return [...arr].sort((a,b) => a.name.localeCompare(b.name, 'nl', {sensitivity:'base'}));
+}
+function eligibleCooks() {
+  return sortForCook(people.filter(p => present.has(p.id) && cooksThisShift[p.id]));
+}
+function setMode(m) {
+  mode = m;
+  ['Dienst','Rang','Hist'].forEach(x => {
+    document.getElementById('tab'+x).classList.toggle('active', m===x.toLowerCase());
+    document.getElementById('panel'+x).classList.toggle('hidden', m!==x.toLowerCase());
+  });
+  render();
+}
+function defaultCooks(p) { return !p.bevelvoerder; }
+function render() {
+  if (mode === 'dienst') renderDienst();
+  else if (mode === 'rang') renderRang();
+  else renderHist();
+  document.getElementById('counthint').textContent =
+    people.length + ' personen · ' + people.filter(p=>p.bevelvoerder).length + ' bevelvoerder(s)';
+  save();
+}
+function renderDienst() {
+  const roster = document.getElementById('roster');
+  const sorted = sortAlpha(people);
+  roster.innerHTML = sorted.map(p => {
+    const isPresent = present.has(p.id);
+    const cooks = cooksThisShift[p.id];
+    let bvBtn = '';
+    if (isPresent) bvBtn = `<button class="bv-toggle ${cooks?'cooks':'nocook'}" onclick="toggleCooks('${p.id}')">${cooks?'kookt mee':'kookt niet'}</button>`;
+    else if (p.bevelvoerder) bvBtn = `<span class="bv-toggle">BV</span>`;
+    return `<div class="rosterrow ${isPresent?'present':''}">
+        <button class="chk ${isPresent?'on':''}" onclick="togglePresent('${p.id}')">${isPresent?'✓':''}</button>
+        <div class="nm">${esc(p.name)}${p.bevelvoerder?'<span class="role-pill">BV</span>':''}
+          <small>teller ${p.counter} · ${p.cooked}x gekookt</small></div>
+        ${bvBtn}
+      </div>`;
+  }).join('') || '<div class="empty-state">Geen personen. Voeg je ploeg toe.</div>';
+  const n = present.size;
+  const cc = document.getElementById('dienstCount');
+  cc.textContent = n + ' aanwezig';
+  cc.className = 'count' + (n>0 && n<8 ? ' warn' : '');
+}
+function renderRang() {
+  const sorted = sortForCook(people);
+  const next = sorted.find(p => !p.bevelvoerder) || sorted[0] || null;
+  const cn = document.getElementById('cooknow');
+  if (!next) {
+    cn.className = 'cooknow empty';
+    cn.innerHTML = '<div class="label">Aan de beurt</div><div class="name">—</div><div class="meta">Voeg personen toe</div>';
+  } else {
+    cn.className = 'cooknow';
+    cn.innerHTML = `<div class="label">Volgende kok (op basis van ranglijst)</div>
+      <div class="name">${esc(next.name)}</div>
+      <div class="meta">Teller ${next.counter} · ${next.cooked}x gekookt · ${next.diensten} diensten${next.stamb?` · stb ${esc(next.stamb)}`:''}</div>`;
+  }
+  document.getElementById('emptystate').style.display = people.length ? 'none' : 'block';
+  document.getElementById('tbody').innerHTML = sorted.map((p, idx) => `
+    <tr class="${next && p.id===next.id ? 'next-cook':''}">
+      <td class="rank">${idx+1}</td>
+      <td class="name-col">${esc(p.name)}${p.bevelvoerder?'<span class="role-pill">BV</span>':''}</td>
+      <td><span class="counter">${p.counter}</span></td>
+      <td class="hide-mobile substat">${p.cooked}x</td>
+      <td class="hide-mobile substat">${p.diensten}</td>
+      <td class="hide-mobile stamb">${esc(p.stamb)||'—'}</td>
+    </tr>`).join('');
+}
+function renderHist() {
+  const list = document.getElementById('histList');
+  document.getElementById('histEmpty').style.display = history.length ? 'none' : 'block';
+  list.innerHTML = history.map((h, i) => {
+    const d = h.dienstDate ? new Date(h.dienstDate + 'T12:00:00') : new Date(h.ts);
+    const datum = d.toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+    const undo = (i===0) ? `<button class="btn ghost hist-undo" onclick="undoLast()">↩ Maak ongedaan</button>` : '';
+    return `<div class="hist-item">
+      <div class="top">
+        <span class="kok">${esc(h.kokNaam)}</span>
+        <span class="date">${datum}</span>${undo}
+      </div>
+      <div class="det">${h.aantal} aanwezig${h.handmatig?' · handmatig gekozen':''}</div>
+      <div class="att">${h.aanwezigen.map(esc).join(', ')}</div>
+    </div>`;
+  }).join('');
+}
+function togglePresent(id) {
+  const p = people.find(x=>x.id===id);
+  if (present.has(id)) { present.delete(id); delete cooksThisShift[id]; }
+  else { present.add(id); cooksThisShift[id] = defaultCooks(p); }
+  renderDienst();
+}
+function toggleCooks(id) { cooksThisShift[id] = !cooksThisShift[id]; renderDienst(); }
+function clearPresent() { present.clear(); cooksThisShift = {}; renderDienst(); }
+
+function startConfirm() {
+  if (present.size === 0) { toast('Niemand aangevinkt'); return; }
+  const elig = eligibleCooks();
+  selectedKokId = elig.length ? elig[0].id : null;
+  const top = elig[0];
+  document.getElementById('confName').textContent = top ? top.name : 'Niemand (iedereen kookt-niet)';
+  document.getElementById('confSub').textContent = top
+    ? `Teller ${top.counter} · ${top.cooked}x gekookt · ${top.diensten} diensten`
+    : 'Vink iemand op "kookt mee" om een kok te kunnen kiezen';
+  // pick list = alle aanwezigen die koken
+  const pl = document.getElementById('pickList');
+  pl.innerHTML = elig.map(p => `
+    <div class="pick-row ${p.id===selectedKokId?'sel':''}" onclick="pickKok('${p.id}', this)">
+      <span class="dot"></span>
+      <span class="pn">${esc(p.name)}</span>
+      <span class="ps">teller ${p.counter} · ${p.cooked}x</span>
+    </div>`).join('') || '<div style="padding:14px;color:var(--muted)">Geen kandidaten — iedereen staat op "kookt niet".</div>';
+  document.getElementById('confDate').value = new Date().toISOString().slice(0,10);
+  document.getElementById('confirmOverlay').classList.add('show');
+}
+function pickKok(id, el) {
+  selectedKokId = id;
+  document.querySelectorAll('#pickList .pick-row').forEach(r => r.classList.remove('sel'));
+  el.classList.add('sel');
+  const p = people.find(x=>x.id===id);
+  document.getElementById('confName').textContent = p.name;
+  document.getElementById('confSub').textContent = `Teller ${p.counter} · ${p.cooked}x gekookt · ${p.diensten} diensten`;
+}
+function closeConfirm(){ document.getElementById('confirmOverlay').classList.remove('show'); }
+function confirmCommit() {
+  const elig = eligibleCooks();
+  const autoTop = elig.length ? elig[0].id : null;
+  const kok = selectedKokId ? people.find(p=>p.id===selectedKokId) : null;
+  const aanwezigen = people.filter(p => present.has(p.id));
+  // teller +1 en diensten +1 voor alle aanwezigen
+  aanwezigen.forEach(p => { p.counter += 1; p.diensten += 1; });
+  // sla de teller op ná +1 maar vóór reset — nodig voor correcte undo
+  const kokCounterSnapshot = kok ? kok.counter : null;
+  if (kok) { kok.counter = 0; kok.cooked += 1; }
+  const dienstDate = document.getElementById('confDate').value || new Date().toISOString().slice(0,10);
+  // history record (snapshot om undo mogelijk te maken)
+  history.unshift({
+    ts: Date.now(),
+    dienstDate,
+    kokId: kok ? kok.id : null,
+    kokNaam: kok ? kok.name : 'Geen kok',
+    kokCounterSnapshot,
+    aantal: aanwezigen.length,
+    aanwezigen: aanwezigen.map(p => p.name),
+    aanwezigenIds: aanwezigen.map(p => p.id),
+    handmatig: kok ? (kok.id !== autoTop) : false
+  });
+  closeConfirm();
+  present.clear(); cooksThisShift = {}; selectedKokId = null;
+  saveBackup();
+  render();
+  toast(kok ? `${kok.name} kookt — dienst verwerkt` : 'Dienst verwerkt (geen kok)');
+}
+function undoLast() {
+  if (!history.length) return;
+  requirePin(() => {
+    if (!confirm('Laatste dienst ongedaan maken? Tellers worden teruggedraaid.')) return;
+    const h = history[0];
+    h.aanwezigenIds.forEach(id => {
+      const p = people.find(x=>x.id===id);
+      if (p) { p.counter = Math.max(0,p.counter-1); p.diensten = Math.max(0,p.diensten-1); }
+    });
+    if (h.kokId) {
+      const k = people.find(x=>x.id===h.kokId);
+      if (k) {
+        k.cooked = Math.max(0,k.cooked-1);
+        if (h.kokCounterSnapshot != null) k.counter = h.kokCounterSnapshot;
+      }
+    }
+    history.shift();
+    render();
+    toast('Laatste dienst ongedaan gemaakt');
+  });
+}
+function openAdd() { requirePin(doOpenAdd); }
+function doOpenAdd() {
+  ['addName','addStamb'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('addCounter').value='0';
+  document.getElementById('addCooked').value='0';
+  document.getElementById('addDiensten').value='0';
+  document.getElementById('addBv').checked=false;
+  document.getElementById('addOverlay').classList.add('show');
+  setTimeout(()=>document.getElementById('addName').focus(),50);
+}
+function closeAdd(){ document.getElementById('addOverlay').classList.remove('show'); }
+function saveAdd() {
+  const name = document.getElementById('addName').value.trim();
+  if (!name) { toast('Naam invullen'); return; }
+  people.push({ id: 'p_'+Date.now()+Math.random().toString(36).slice(2,6), name,
+    stamb: document.getElementById('addStamb').value.trim(),
+    counter: parseInt(document.getElementById('addCounter').value)||0,
+    cooked: parseInt(document.getElementById('addCooked').value)||0,
+    diensten: parseInt(document.getElementById('addDiensten').value)||0,
+    bevelvoerder: document.getElementById('addBv').checked });
+  closeAdd(); render(); toast(name + ' toegevoegd');
+}
+function openManage() { requirePin(doOpenManage); }
+function doOpenManage() {
+  document.getElementById('manageBody').innerHTML = people.map(p => `
+    <div class="edit-row" data-id="${p.id}">
+      <input class="name-in" value="${esc(p.name)}" placeholder="Naam">
+      <input class="stamb-in" value="${esc(p.stamb)}" placeholder="Stb" inputmode="numeric">
+      <button class="bv-mini ${p.bevelvoerder?'on':''}" onclick="toggleBvRole(this)" data-bv="${p.bevelvoerder?'1':'0'}">BV</button>
+      <button class="mini" onclick="removePerson('${p.id}')" title="Verwijder">🗑️</button>
+    </div>`).join('') || '<div class="empty-state">Geen personen</div>';
+  const backups = JSON.parse(localStorage.getItem(STORE_KEY+'_backups')||'[]');
+  document.getElementById('backupList').innerHTML = backups.length
+    ? backups.map((b,i) => {
+        const d = new Date(b.ts);
+        const lbl = d.toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short'})
+          + ' ' + d.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
+        return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--paper-line)">
+          <span style="flex:1;font-size:13px">${lbl}</span>
+          <button class="btn ghost" style="padding:5px 10px;font-size:12px" onclick="restoreBackup(${i})">Herstel</button>
+        </div>`;
+      }).join('')
+    : '<div style="font-size:13px;color:var(--muted);padding:4px 0">Nog geen backups — worden aangemaakt na eerste verwerkte dienst.</div>';
+  document.getElementById('newPinInput').value = '';
+  document.getElementById('manageOverlay').classList.add('show');
+}
+function toggleBvRole(btn) {
+  const on = btn.dataset.bv === '1';
+  btn.dataset.bv = on ? '0' : '1';
+  btn.classList.toggle('on', !on);
+}
+function closeManage(){ document.getElementById('manageOverlay').classList.remove('show'); }
+function removePerson(id) {
+  const p = people.find(x=>x.id===id);
+  if (!confirm(`${p?p.name:'Persoon'} verwijderen?`)) return;
+  people = people.filter(x=>x.id!==id);
+  present.delete(id); delete cooksThisShift[id];
+  doOpenManage(); render();
+}
+function saveManage() {
+  document.querySelectorAll('#manageBody .edit-row').forEach(row => {
+    const id = row.dataset.id;
+    const p = people.find(x=>x.id===id);
+    if (p) {
+      p.name = row.querySelector('.name-in').value.trim() || p.name;
+      p.stamb = row.querySelector('.stamb-in').value.trim();
+      p.bevelvoerder = row.querySelector('.bv-mini').dataset.bv === '1';
+    }
+  });
+  closeManage(); render(); toast('Lijst opgeslagen');
+}
+function resetAll() {
+  if (!confirm('Alle tellers, gekookt en diensten op 0 zetten?\nNamen, rollen en historie blijven staan.')) return;
+  people.forEach(p => { p.counter=0; p.cooked=0; p.diensten=0; });
+  present.clear(); cooksThisShift = {};
+  closeManage(); render(); toast('Tellers gereset');
+}
+function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+let toastT;
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2400); }
+// --- PIN ---
+let pinCallback = null;
+function requirePin(cb) {
+  pinCallback = cb;
+  document.getElementById('pinInput').value = '';
+  document.getElementById('pinError').style.display = 'none';
+  document.getElementById('pinOverlay').classList.add('show');
+  setTimeout(() => document.getElementById('pinInput').focus(), 50);
+}
+function submitPin() {
+  const stored = localStorage.getItem(STORE_KEY+'_pin') || '1234';
+  if (document.getElementById('pinInput').value === stored) {
+    document.getElementById('pinOverlay').classList.remove('show');
+    const cb = pinCallback; pinCallback = null;
+    if (cb) cb();
+  } else {
+    document.getElementById('pinError').style.display = 'block';
+    document.getElementById('pinInput').value = '';
+    document.getElementById('pinInput').focus();
+  }
+}
+function closePinOverlay() {
+  document.getElementById('pinOverlay').classList.remove('show');
+  pinCallback = null;
+}
+function changePin() {
+  const val = document.getElementById('newPinInput').value.trim();
+  if (!val || val.length < 4) { toast('PIN moet minimaal 4 cijfers zijn'); return; }
+  localStorage.setItem(STORE_KEY+'_pin', val);
+  document.getElementById('newPinInput').value = '';
+  toast('PIN opgeslagen');
+}
+// --- AUTO-BACKUP ---
+function saveBackup() {
+  try {
+    const backups = JSON.parse(localStorage.getItem(STORE_KEY+'_backups')||'[]');
+    backups.unshift({ ts: Date.now(), data: JSON.stringify({people, history}) });
+    if (backups.length > 5) backups.splice(5);
+    localStorage.setItem(STORE_KEY+'_backups', JSON.stringify(backups));
+  } catch(e) {}
+}
+function restoreBackup(index) {
+  const backups = JSON.parse(localStorage.getItem(STORE_KEY+'_backups')||'[]');
+  if (!backups[index]) return;
+  const d = new Date(backups[index].ts);
+  const lbl = d.toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short'})
+    + ' ' + d.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
+  if (!confirm(`Herstellen naar backup van ${lbl}?\nHuidige data wordt overschreven.`)) return;
+  const restored = JSON.parse(backups[index].data);
+  people = restored.people || [];
+  history = restored.history || [];
+  present.clear(); cooksThisShift = {};
+  closeManage(); render();
+  toast('Hersteld naar ' + lbl);
+}
+document.getElementById('addName').addEventListener('keydown',e=>{if(e.key==='Enter')saveAdd();});
+document.getElementById('pinInput').addEventListener('keydown',e=>{if(e.key==='Enter')submitPin();});
+['confirmOverlay','addOverlay','manageOverlay'].forEach(id=>{
+  const o=document.getElementById(id);
+  o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('show');});
+});
+document.getElementById('pinOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('pinOverlay'))closePinOverlay();});
+render();
+</script>
+
+
+</body></html>
