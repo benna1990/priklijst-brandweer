@@ -29,7 +29,8 @@
   .tab { flex: 1; padding: 13px; text-align: center; cursor: pointer; font-family: 'Oswald', sans-serif; text-transform: uppercase;
     letter-spacing: 1px; font-size: 14px; background: #e7e2d6; color: var(--muted); border: none; transition: all 0.15s; }
   .tab.active { background: #fff; color: var(--ink); box-shadow: inset 0 3px 0 var(--red); }
-  .panel { background: #fff; border-radius: 0 0 10px 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); border: 1px solid var(--paper-line); border-top: none; overflow: hidden; }
+  .panel { background: #fff; border-radius: 0 0 10px 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); border: 1px solid var(--paper-line); border-top: none; overflow: clip; }
+  html { overflow-y: scroll; -webkit-overflow-scrolling: touch; }
   .panel.hidden { display: none; }
   .cooknow { margin: 0; background: linear-gradient(135deg, var(--red), var(--red-dark)); color: #fff; padding: 20px 22px; position: relative; overflow: hidden; }
   .cooknow::before { content: "🔥"; position: absolute; right: -10px; top: -18px; font-size: 120px; opacity: 0.12; transform: rotate(12deg); }
@@ -856,8 +857,15 @@ function confirmCommit() {
 function undoLast() {
   if (!history.length) return;
   requirePin(() => {
-    if (!confirm('Laatste dienst ongedaan maken? Tellers worden teruggedraaid.')) return;
     const h = history[0];
+    const d = h.dienstDate ? new Date(h.dienstDate+'T12:00:00') : new Date(h.ts);
+    const datumLbl = d.toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short'});
+    const msg = `Dienst van ${datumLbl} ongedaan maken?\n\n`
+      + `• Beurtteller van alle ${h.aanwezigenIds.length} aanwezigen gaat −1\n`
+      + `• Diensten van alle aanwezigen gaat −1\n`
+      + (h.kokId ? `• Kookbeurt van ${h.kokNaam} wordt teruggedraaid\n` : '')
+      + `\nBedoeling was een andere kok aanwijzen? Annuleer, pas handmatig de tellers aan via ✎ in de beheerlijst.`;
+    if (!confirm(msg)) return;
     h.aanwezigenIds.forEach(id => {
       const p = people.find(x=>x.id===id);
       if (p) { p.counter = Math.max(0,p.counter-1); p.diensten = Math.max(0,p.diensten-1); }
