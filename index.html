@@ -367,8 +367,6 @@
           <th class="rank">#</th>
           <th class="name-col">Naam</th>
           <th>Teller</th>
-          <th class="hide-mobile">Gekookt</th>
-          <th class="hide-mobile">Diensten</th>
           <th class="hide-mobile">Stamb.</th>
         </tr>
       </thead>
@@ -633,7 +631,7 @@ function renderRang() {
     cn.className = 'cooknow';
     cn.innerHTML = `<div class="label">Volgende kok (op basis van ranglijst)</div>
       <div class="name">${esc(next.name)}</div>
-      <div class="meta">Teller ${next.counter} · ${next.cooked}x gekookt · ${next.diensten} diensten${next.stamb?` · stb ${esc(next.stamb)}`:''}</div>`;
+      <div class="meta">Teller ${next.counter}${next.stamb?` · stb ${esc(next.stamb)}`:''}</div>`;
   }
   document.getElementById('emptystate').style.display = people.length ? 'none' : 'block';
   document.getElementById('tbody').innerHTML = sorted.map((p, idx) => `
@@ -641,8 +639,6 @@ function renderRang() {
       <td class="rank">${idx+1}</td>
       <td class="name-col">${esc(p.name)}${p.bevelvoerder?'<span class="role-pill">BV</span>':''}</td>
       <td><span class="counter">${p.counter}</span></td>
-      <td class="hide-mobile substat">${p.cooked}x</td>
-      <td class="hide-mobile substat">${p.diensten}</td>
       <td class="hide-mobile stamb">${esc(p.stamb)||'—'}</td>
     </tr>`).join('');
 }
