@@ -702,7 +702,7 @@ function renderDienst() {
     if (isPresent) bvBtn = `<button class="bv-toggle ${cooks?'cooks':'nocook'}" onclick="toggleCooks('${p.id}')">${cooks?'kookt mee':'kookt niet'}</button>`;
     return `<div class="rosterrow ${isPresent?'present':''}">
         <button class="chk ${isPresent?'on':''}" onclick="togglePresent('${p.id}')">${isPresent?'✓':''}</button>
-        <div class="nm nm-link" onclick="openPersonDetail('${p.id}')">${esc(p.name)}${p.bevelvoerder?'<span class="role-pill">BV</span>':''}</div>
+        <div class="nm">${esc(p.name)}${p.bevelvoerder?'<span class="role-pill">BV</span>':''}</div>
         ${bvBtn}
       </div>`;
   }).join('') || '<div class="empty-state">Geen personen. Voeg je ploeg toe.</div>';
