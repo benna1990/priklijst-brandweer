@@ -3,7 +3,7 @@
 <html lang="nl"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Priklijst — Kookrooster Brandweer</title>
+<title>Priklijst Kookrooster Brandweer</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow:wght@400;500;600&display=swap');
   :root {
@@ -79,6 +79,8 @@
   .btn.green:hover { background:#256e3e; }
   .spacer { flex: 1; }
   .counthint { font-size: 13px; color: var(--muted); }
+  .gear-btn { background: none; border: 2px solid var(--paper-line); border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer; color: var(--muted); flex: 0 0 auto; transition: background 0.15s, color 0.15s, border-color 0.15s; line-height: 1; display: flex; align-items: center; justify-content: center; }
+  .gear-btn:hover { background: var(--steel); color: #fff; border-color: var(--steel); }
   .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
   .empty-state .big { font-size: 40px; margin-bottom: 10px; }
   /* HISTORY */
@@ -384,10 +386,9 @@
     <div id="histEmpty" class="empty-state"><div class="big">📜</div>Nog geen verwerkte diensten.</div>
   </div>
   <div class="toolbar">
-    <button class="btn primary" onclick="openAdd()">+ Persoon</button>
-    <button class="btn" onclick="openManage()">Lijst beheren</button>
+    <span class="counthint" id="counthint"></span>
     <div class="spacer"></div>
-    <span class="counthint" id="counthint">39 personen · 0 bevelvoerder(s)</span>
+    <button class="gear-btn" onclick="openManage()" title="Lijst beheren" aria-label="Lijst beheren">⚙</button>
   </div>
 </div>
 <!-- CONFIRM KOK MODAL -->
@@ -449,6 +450,9 @@
         <button class="btn ghost" onclick="changePin()">Opslaan</button>
       </div>
     </div>
+    <div style="padding:0 20px 12px">
+      <button class="btn" style="width:100%" onclick="_addFromManage=true;document.getElementById('manageOverlay').classList.remove('show');doOpenAdd()">+ Persoon toevoegen</button>
+    </div>
     <div class="modal-foot">
       <button class="btn danger" onclick="resetAll()">Tellers resetten</button>
       <button class="btn primary" onclick="saveManage()">Opslaan</button>
@@ -477,7 +481,7 @@
   <div class="modal" style="max-width:480px">
     <div class="modal-head">Hoe werkt het? <button class="x" onclick="closeHelp()">×</button></div>
     <div class="modal-body" style="line-height:1.7;font-size:15px">
-      <p style="margin-bottom:12px">De priklijst bepaalt automatisch wie er kookt — eerlijk op basis van aanwezigheid.</p>
+      <p style="margin-bottom:12px">De priklijst bepaalt automatisch wie er kookt, eerlijk op basis van aanwezigheid.</p>
       <div style="display:flex;flex-direction:column;gap:14px">
         <div>
           <div style="font-family:'Oswald';text-transform:uppercase;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:4px">Stap 1: Dienst</div>
@@ -493,7 +497,7 @@
         </div>
         <div>
           <div style="font-family:'Oswald';text-transform:uppercase;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:4px">Na het koken</div>
-          De kok's teller wordt op nul gezet — iedereen die aanwezig was bouwt punten op. Zo schuift de beurt vanzelf door.
+          De kok's teller wordt op nul gezet; iedereen die aanwezig was bouwt punten op. Zo schuift de beurt vanzelf door.
         </div>
         <div>
           <div style="font-family:'Oswald';text-transform:uppercase;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:4px">Bevelvoerder (BV)</div>
@@ -505,7 +509,8 @@
           <ol style="margin:8px 0 0 18px;display:flex;flex-direction:column;gap:4px;font-size:14px">
             <li>Wie het minste <b>totaal gekookt</b> heeft</li>
             <li>Wie de meeste <b>diensten</b> heeft gedraaid</li>
-            <li>Wie het <b>langst geleden</b> heeft gekookt (of nooit — die gaat altijd voor)</li>
+            <li>Wie het <b>langst geleden</b> heeft gekookt (of nooit, die gaat altijd voor)</li>
+            <li>Als het dan nog steeds gelijk is: <b>loting</b> tussen de gebonden collega's</li>
           </ol>
         </div>
       </div>
@@ -755,7 +760,7 @@ function confirmCommit() {
   present.clear(); cooksThisShift = {}; selectedKokId = null;
   saveBackup();
   render();
-  toast(kok ? `${kok.name} kookt — dienst verwerkt` : 'Dienst verwerkt (geen kok)');
+  toast(kok ? `${kok.name} kookt, dienst verwerkt` : 'Dienst verwerkt (geen kok)');
 }
 function undoLast() {
   if (!history.length) return;
@@ -788,7 +793,11 @@ function doOpenAdd() {
   document.getElementById('addOverlay').classList.add('show');
   setTimeout(()=>document.getElementById('addName').focus(),50);
 }
-function closeAdd(){ document.getElementById('addOverlay').classList.remove('show'); }
+var _addFromManage = false;
+function closeAdd(){
+  document.getElementById('addOverlay').classList.remove('show');
+  if (_addFromManage) { _addFromManage = false; doOpenManage(); }
+}
 function saveAdd() {
   const name = document.getElementById('addName').value.trim();
   if (!name) { toast('Naam invullen'); return; }
@@ -797,7 +806,11 @@ function saveAdd() {
     cooked: parseInt(document.getElementById('addCooked').value)||0,
     diensten: parseInt(document.getElementById('addDiensten').value)||0,
     bevelvoerder: document.getElementById('addBv').checked });
-  closeAdd(); render(); toast(name + ' toegevoegd');
+  const fromManage = _addFromManage;
+  _addFromManage = false;
+  document.getElementById('addOverlay').classList.remove('show');
+  render(); toast(name + ' toegevoegd');
+  if (fromManage) doOpenManage();
 }
 function openManage() { requirePin(doOpenManage); }
 function doOpenManage() {
@@ -821,7 +834,7 @@ function doOpenManage() {
           <button class="btn ghost" style="padding:5px 10px;font-size:12px" onclick="restoreBackup(${i})">Herstel</button>
         </div>`;
       }).join('')
-    : '<div style="font-size:13px;color:var(--muted);padding:4px 0">Nog geen backups — worden aangemaakt na eerste verwerkte dienst.</div>';
+    : '<div style="font-size:13px;color:var(--muted);padding:4px 0">Nog geen backups, worden aangemaakt na eerste verwerkte dienst.</div>';
   document.getElementById('newPinInput').value = '';
   document.getElementById('manageOverlay').classList.add('show');
 }
