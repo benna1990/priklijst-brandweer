@@ -2,8 +2,14 @@
 <!-- saved from url=(0057)file:///Users/benjaminootjers/Downloads/priklijst-v3.html -->
 <html lang="nl"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Priklijst Kookrooster Brandweer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Priklijst Victor</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23c1272d'/><text y='.90em' font-size='74' x='11'>🔥</text></svg>">
+<meta name="theme-color" content="#c1272d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Priklijst">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow:wght@400;500;600&display=swap');
   :root {
@@ -1036,6 +1042,31 @@ function restoreBackup(index) {
 }
 function openHelp(){ document.getElementById('helpOverlay').classList.add('show'); }
 function closeHelp(){ document.getElementById('helpOverlay').classList.remove('show'); }
+// Genereer apple-touch-icon dynamisch (canvas → PNG data-URI)
+(function() {
+  try {
+    const sz = 192, r = 36;
+    const c = document.createElement('canvas');
+    c.width = c.height = sz;
+    const ctx = c.getContext('2d');
+    ctx.beginPath();
+    ctx.moveTo(r,0); ctx.lineTo(sz-r,0); ctx.arcTo(sz,0,sz,r,r);
+    ctx.lineTo(sz,sz-r); ctx.arcTo(sz,sz,sz-r,sz,r);
+    ctx.lineTo(r,sz); ctx.arcTo(0,sz,0,sz-r,r);
+    ctx.lineTo(0,r); ctx.arcTo(0,0,r,0,r); ctx.closePath();
+    ctx.fillStyle='#c1272d'; ctx.fill();
+    ctx.font='bold italic 52px Oswald,sans-serif';
+    ctx.fillStyle='rgba(255,255,255,0.18)';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('V', sz/2+2, sz/2+4);
+    ctx.font='112px serif';
+    ctx.fillStyle='#fff';
+    ctx.fillText('🔥', sz/2, sz/2+2);
+    const link = document.createElement('link');
+    link.rel='apple-touch-icon'; link.href=c.toDataURL('image/png');
+    document.head.appendChild(link);
+  } catch(e){}
+})();
 document.getElementById('addName').addEventListener('keydown',e=>{if(e.key==='Enter')saveAdd();});
 document.getElementById('pinInput').addEventListener('keydown',e=>{if(e.key==='Enter')submitPin();});
 ['confirmOverlay','addOverlay','manageOverlay','statsEditOverlay'].forEach(id=>{
