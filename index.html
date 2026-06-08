@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!-- saved from url=(0057)file:///Users/benjaminootjers/Downloads/priklijst-v3.html -->
 <html lang="nl"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -50,7 +49,6 @@
   .rosterrow { display:flex; align-items:center; gap:10px; padding:9px 8px; border-bottom:1px solid var(--paper-line); border-radius:6px; }
   .rosterrow.present { background:#f1f8f3; }
   .rosterrow .nm { flex:1; font-weight:600; font-size:15px; }
-  .rosterrow .nm small { display:block; font-weight:400; color:var(--muted); font-size:12px; }
   .chk { width:30px; height:30px; border-radius:6px; border:2px solid var(--paper-line); background:#fff; cursor:pointer; font-size:15px; line-height:1; flex:0 0 auto; }
   .chk.on { background:var(--green); border-color:var(--green); color:#fff; }
   .rang-divider td { font-family:'Oswald',sans-serif; font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); padding:10px 8px 4px 16px; border-top:2px solid var(--paper-line); background:var(--paper); }
@@ -62,10 +60,6 @@
   .toolbar-live.exact { background:var(--green); color:#fff; }
   .toolbar-live.over  { background:var(--gold); color:var(--ink); }
   .edit-row-main { display:flex; align-items:center; gap:8px; }
-  .edit-row-stats { padding:8px 0 4px; display:none; gap:10px; }
-  .edit-stat { display:flex; flex-direction:column; align-items:center; gap:2px; }
-  .edit-stat label { font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); font-family:'Oswald'; white-space:nowrap; }
-  .edit-stat .num-in { width:60px; padding:6px 4px; border:1px solid var(--paper-line); border-radius:5px; font-family:'Barlow'; text-align:center; }
   .hist-type-badge { font-size:11px; font-family:'Oswald'; text-transform:uppercase; letter-spacing:0.5px; padding:2px 8px; border-radius:10px; display:inline-block; margin-bottom:4px; }
   .hist-nieuw-lid .hist-type-badge { background:#eef6f1; color:var(--green); border:1px solid #b9dfc8; }
   .hist-aanpassing .hist-type-badge { background:#fdf5e0; color:#8a6c00; border:1px solid #f0d98a; }
@@ -81,7 +75,6 @@
   .rank { font-family: 'Oswald', sans-serif; color: var(--muted); font-size: 13px; width: 28px; }
   .counter { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 20px; color: var(--red); }
   .substat { color: var(--muted); font-size: 13px; }
-  .stamb { font-size: 13px; color: var(--muted); }
   .role-pill { font-size:10px; font-family:'Oswald'; text-transform:uppercase; letter-spacing:0.5px; background:var(--red); color:#fff; padding:2px 6px; border-radius:10px; margin-left:6px; vertical-align:middle; }
   .mini { background: none; border: none; cursor: pointer; font-size: 14px; color: var(--muted); padding: 4px; border-radius: 4px; }
   .mini:hover { background: var(--paper); color: var(--ink); }
@@ -403,7 +396,7 @@
   </div>
   <div class="toolbar">
     <span class="counthint" id="counthint" style="display:none"></span>
-    <span class="toolbar-live" id="toolbarLive">0 aanwezig</span>
+    <span class="toolbar-live" id="toolbarLive">0 geselecteerd</span>
     <div class="spacer"></div>
     <button class="btn ghost" id="toolbarWis" onclick="clearPresent()">Wis</button>
     <button class="btn gold" id="toolbarBepaal" onclick="startConfirm()">Bepaal kok →</button>
@@ -534,11 +527,11 @@
         </div>
         <div>
           <div style="font-family:'Oswald';text-transform:uppercase;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:4px">Na het koken</div>
-          De kok's teller wordt op nul gezet; iedereen die aanwezig was bouwt punten op. Zo schuift de beurt vanzelf door.
+          De teller van de kok wordt op nul gezet; iedereen die aanwezig was bouwt punten op. Zo schuift de beurt vanzelf door.
         </div>
         <div>
           <div style="font-family:'Oswald';text-transform:uppercase;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:4px">Bevelvoerder (BV)</div>
-          BV's doen standaard niet mee met koken. Per dienst is dat aan te zetten als ze toch willen meedoen.
+          BV's doen standaard niet mee met koken. Per dienst kun je dat per BV omzetten als hij of zij toch mee wil koken.
         </div>
         <div>
           <div style="font-family:'Oswald';text-transform:uppercase;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:4px">Nieuwe collega</div>
@@ -630,8 +623,10 @@ function sortForCook(arr) {
     if (a.cooked !== b.cooked) return a.cooked - b.cooked;
     if (b.diensten !== a.diensten) return b.diensten - a.diensten;
     // langst geleden gekookt gaat voor (ts=0 = nooit gekookt = altijd eerste)
-    const tsA = (history.find(h=>h.kokId===a.id)||{ts:0}).ts;
-    const tsB = (history.find(h=>h.kokId===b.id)||{ts:0}).ts;
+    // filter op type 'dienst' zodat handmatige aanpassingen de volgorde niet verstoren
+    const isDienst = h => !h.type || h.type === 'dienst';
+    const tsA = (history.find(h=>isDienst(h)&&h.kokId===a.id)||{ts:0}).ts;
+    const tsB = (history.find(h=>isDienst(h)&&h.kokId===b.id)||{ts:0}).ts;
     return tsA - tsB;
   });
 }
@@ -776,9 +771,10 @@ function clearPresent() { present.clear(); cooksThisShift = {}; renderDienst(); 
 function pickFromTied(sorted) {
   if (!sorted.length) return null;
   const top = sorted[0];
-  const tsTop = (history.find(h=>h.kokId===top.id)||{ts:0}).ts;
+  const isDienst = h => !h.type || h.type === 'dienst';
+  const tsTop = (history.find(h=>isDienst(h)&&h.kokId===top.id)||{ts:0}).ts;
   const tied = sorted.filter(p => {
-    const ts = (history.find(h=>h.kokId===p.id)||{ts:0}).ts;
+    const ts = (history.find(h=>isDienst(h)&&h.kokId===p.id)||{ts:0}).ts;
     return p.counter===top.counter && p.cooked===top.cooked && p.diensten===top.diensten && ts===tsTop;
   });
   return tied.length > 1 ? tied[Math.floor(Math.random()*tied.length)] : top;
@@ -796,8 +792,8 @@ function startConfirm() {
   const n = present.size;
   if (n !== 8) {
     warn.textContent = n < 8
-      ? `Minder personen dan gebruikelijk: ${n} aanwezig (normaal 8).`
-      : `Meer personen dan gebruikelijk: ${n} aanwezig (normaal 8).`;
+      ? `Minder personen dan gebruikelijk: ${n} geselecteerd (normaal 8).`
+      : `Meer personen dan gebruikelijk: ${n} geselecteerd (normaal 8).`;
     warn.style.display = 'block';
   } else { warn.style.display = 'none'; }
   // pick list = alle aanwezigen die koken
@@ -965,7 +961,7 @@ function saveStatsEdit() {
   const newDiensten = parseInt(document.getElementById('statsEditDiensten').value)||0;
   if (newCounter !== p.counter || newCooked !== p.cooked || newDiensten !== p.diensten) {
     history.unshift({
-      ts: Date.now(), dienstDate: null, kokId: p.id, kokNaam: p.name,
+      ts: Date.now(), dienstDate: null, kokId: null, kokNaam: p.name,
       kokCounterSnapshot: null, aantal: 0, aanwezigen: [], aanwezigenIds: [], handmatig: false,
       type: 'aanpassing',
       from: { counter: p.counter, cooked: p.cooked, diensten: p.diensten },
@@ -1104,6 +1100,9 @@ function closeHelp(){ document.getElementById('helpOverlay').classList.remove('s
 })();
 document.getElementById('addName').addEventListener('keydown',e=>{if(e.key==='Enter')saveAdd();});
 document.getElementById('pinInput').addEventListener('keydown',e=>{if(e.key==='Enter')submitPin();});
+['statsEditCounter','statsEditCooked','statsEditDiensten'].forEach(id=>{
+  document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')saveStatsEdit();});
+});
 ['confirmOverlay','addOverlay','manageOverlay','statsEditOverlay'].forEach(id=>{
   const o=document.getElementById(id);
   o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('show');});
