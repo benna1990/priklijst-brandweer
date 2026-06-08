@@ -107,6 +107,14 @@
   .hist-item .det { font-size:13px; color:var(--muted); margin-top:4px; }
   .hist-item .att { font-size:13px; color:var(--ink); margin-top:6px; line-height:1.5; }
   .hist-undo { float:right; }
+  .person-stats-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:16px; text-align:center; background:#faf9f5; border-radius:8px; padding:12px; border:1px solid var(--paper-line); }
+  .person-stat-val { font-family:'Oswald',sans-serif; font-size:24px; font-weight:700; color:var(--red); }
+  .person-stat-lbl { font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); margin-top:2px; font-family:'Oswald'; }
+  .cook-hist-list { max-height:220px; overflow-y:auto; }
+  .cook-hist-entry { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid var(--paper-line); font-size:14px; }
+  .cook-hist-entry:last-child { border-bottom:none; }
+  .nm-link { cursor:pointer; }
+  .nm-link:active { opacity:0.7; }
   /* MODAL */
   .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
   .overlay.show { display: flex; }
@@ -564,6 +572,16 @@
     </div>
   </div>
 </div>
+<!-- PERSON DETAIL MODAL -->
+<div class="overlay" id="personOverlay">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-head" id="personHead">— <button class="x" onclick="closePersonDetail()">×</button></div>
+    <div class="modal-body" id="personBody"></div>
+    <div class="modal-foot">
+      <button class="btn primary" onclick="closePersonDetail()">Sluiten</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 <script>
 const STORE_KEY = 'priklijst_brandweer_v3';
@@ -684,7 +702,7 @@ function renderDienst() {
     if (isPresent) bvBtn = `<button class="bv-toggle ${cooks?'cooks':'nocook'}" onclick="toggleCooks('${p.id}')">${cooks?'kookt mee':'kookt niet'}</button>`;
     return `<div class="rosterrow ${isPresent?'present':''}">
         <button class="chk ${isPresent?'on':''}" onclick="togglePresent('${p.id}')">${isPresent?'✓':''}</button>
-        <div class="nm">${esc(p.name)}${p.bevelvoerder?'<span class="role-pill">BV</span>':''}</div>
+        <div class="nm nm-link" onclick="openPersonDetail('${p.id}')">${esc(p.name)}${p.bevelvoerder?'<span class="role-pill">BV</span>':''}</div>
         ${bvBtn}
       </div>`;
   }).join('') || '<div class="empty-state">Geen personen. Voeg je ploeg toe.</div>';
@@ -713,7 +731,7 @@ function renderRang() {
   let rows = regular.map((p, idx) => `
     <tr class="${next && p.id===next.id ? 'next-cook':''}">
       <td class="rank">${idx+1}</td>
-      <td class="name-col">${esc(p.name)}</td>
+      <td class="name-col nm-link" onclick="openPersonDetail('${p.id}')">${esc(p.name)}</td>
       <td><span class="counter">${p.counter}</span></td>
       <td class="hide-mobile substat">${p.cooked}x</td>
       <td class="hide-mobile substat">${p.diensten}</td>
@@ -723,7 +741,7 @@ function renderRang() {
     rows += bvs.map(p => `
     <tr>
       <td class="rank" style="color:var(--muted)">—</td>
-      <td class="name-col">${esc(p.name)}<span class="role-pill">BV</span></td>
+      <td class="name-col nm-link" onclick="openPersonDetail('${p.id}')">${esc(p.name)}<span class="role-pill">BV</span></td>
       <td><span class="counter" style="color:var(--muted);font-size:16px">${p.counter}</span></td>
       <td class="hide-mobile substat">${p.cooked}x</td>
       <td class="hide-mobile substat">${p.diensten}</td>
@@ -828,6 +846,14 @@ function pickKok(id, el) {
 }
 function closeConfirm(){ document.getElementById('confirmOverlay').classList.remove('show'); }
 function confirmCommit() {
+  const dienstDate = document.getElementById('confDate').value || new Date().toISOString().slice(0,10);
+  // Blokkeer dubbele dienst op dezelfde datum
+  const existing = history.find(h => (!h.type || h.type === 'dienst') && h.dienstDate === dienstDate);
+  if (existing) {
+    const dl = new Date(dienstDate+'T12:00:00').toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long'});
+    alert(`Op ${dl} heeft ${existing.kokNaam} al gekookt.\nTwee diensten op dezelfde datum zijn niet toegestaan.\n\nPas de datum aan of maak de vorige dienst ongedaan via de Historie.`);
+    return;
+  }
   const elig = eligibleCooks();
   const autoTop = elig.length ? elig[0].id : null;
   const kok = selectedKokId ? people.find(p=>p.id===selectedKokId) : null;
@@ -837,7 +863,6 @@ function confirmCommit() {
   // sla de teller op ná +1 maar vóór reset — nodig voor correcte undo
   const kokCounterSnapshot = kok ? kok.counter : null;
   if (kok) { kok.counter = 0; kok.cooked += 1; }
-  const dienstDate = document.getElementById('confDate').value || new Date().toISOString().slice(0,10);
   // history record (snapshot om undo mogelijk te maken)
   history.unshift({
     ts: Date.now(),
@@ -1083,6 +1108,31 @@ function restoreBackup(index) {
 }
 function openHelp(){ document.getElementById('helpOverlay').classList.add('show'); }
 function closeHelp(){ document.getElementById('helpOverlay').classList.remove('show'); }
+function openPersonDetail(id) {
+  const p = people.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('personHead').innerHTML = esc(p.name)
+    + (p.bevelvoerder ? ' <span class="role-pill" style="font-size:11px;vertical-align:middle">BV</span>' : '')
+    + ' <button class="x" onclick="closePersonDetail()">×</button>';
+  const cookHist = history.filter(h => (!h.type || h.type === 'dienst') && h.kokId === id);
+  const histHtml = cookHist.length
+    ? '<div class="cook-hist-list">' + cookHist.map(h => {
+        const d = h.dienstDate ? new Date(h.dienstDate+'T12:00:00') : new Date(h.ts);
+        const datum = d.toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+        return `<div class="cook-hist-entry"><span>🔥 ${datum}</span><span class="substat">${h.aantal} aanwezig${h.handmatig?' · handmatig':''}</span></div>`;
+      }).join('') + '</div>'
+    : '<div style="color:var(--muted);font-size:14px;padding:12px 0;text-align:center">Nog niet gekookt (in dit systeem)</div>';
+  document.getElementById('personBody').innerHTML = `
+    <div class="person-stats-grid">
+      <div><div class="person-stat-val">${p.counter}</div><div class="person-stat-lbl">Beurtteller</div></div>
+      <div><div class="person-stat-val">${p.cooked}</div><div class="person-stat-lbl">Gekookt</div></div>
+      <div><div class="person-stat-val">${p.diensten}</div><div class="person-stat-lbl">Diensten</div></div>
+    </div>
+    <div style="font-family:'Oswald';text-transform:uppercase;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:8px">Kookgeschiedenis</div>
+    ${histHtml}`;
+  document.getElementById('personOverlay').classList.add('show');
+}
+function closePersonDetail() { document.getElementById('personOverlay').classList.remove('show'); }
 // Genereer apple-touch-icon dynamisch (canvas → PNG data-URI)
 (function() {
   try {
@@ -1129,7 +1179,7 @@ document.getElementById('pinInput').addEventListener('keydown',e=>{if(e.key==='E
 ['statsEditCounter','statsEditCooked','statsEditDiensten'].forEach(id=>{
   document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')saveStatsEdit();});
 });
-['confirmOverlay','addOverlay','manageOverlay','statsEditOverlay'].forEach(id=>{
+['confirmOverlay','addOverlay','manageOverlay','statsEditOverlay','personOverlay'].forEach(id=>{
   const o=document.getElementById(id);
   o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('show');});
 });
