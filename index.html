@@ -138,9 +138,12 @@
 </head>
 <body>
 <header>
-  <div class="wrap">
-    <h1>Priklijst <span class="badge">WIE KOOKT?</span></h1>
-    <p>Brandweer kookrooster — wie het meest aanwezig is, kookt</p>
+  <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+    <div>
+      <h1>Priklijst Victor. <span class="badge">WIE KOOKT?</span></h1>
+      <p>Wie het meest aanwezig is kookt!</p>
+    </div>
+    <button onclick="openHelp()" aria-label="Uitleg" style="flex-shrink:0;background:none;border:2px solid rgba(255,255,255,0.4);color:#fff;border-radius:50%;width:36px;height:36px;font-size:18px;font-weight:700;cursor:pointer;line-height:1">?</button>
   </div>
 </header>
 <div class="wrap">
@@ -468,6 +471,40 @@
     <div class="modal-foot">
       <button class="btn" onclick="closePinOverlay()">Annuleren</button>
       <button class="btn primary" onclick="submitPin()">Bevestigen</button>
+    </div>
+  </div>
+</div>
+<!-- HELP MODAL -->
+<div class="overlay" id="helpOverlay">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-head">Hoe werkt het? <button class="x" onclick="closeHelp()">×</button></div>
+    <div class="modal-body" style="line-height:1.7;font-size:15px">
+      <p style="margin-bottom:12px">De priklijst bepaalt automatisch wie er kookt — eerlijk op basis van aanwezigheid.</p>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div>
+          <div style="font-family:'Oswald';text-transform:uppercase;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:4px">Stap 1 — Dienst</div>
+          Vink iedereen aan die er is. Wie aanwezig is krijgt een punt erbij.
+        </div>
+        <div>
+          <div style="font-family:'Oswald';text-transform:uppercase;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:4px">Stap 2 — Bepaal kok</div>
+          Tik op <b>Bepaal kok →</b>. De app stelt voor wie aan de beurt is: degene met de meeste opgebouwde punten.
+        </div>
+        <div>
+          <div style="font-family:'Oswald';text-transform:uppercase;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:4px">Stap 3 — Bevestigen</div>
+          Akkoord met de voorgestelde kok? Bevestig. Je kunt ook handmatig iemand anders kiezen.
+        </div>
+        <div>
+          <div style="font-family:'Oswald';text-transform:uppercase;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:4px">Na het koken</div>
+          De kok's teller wordt op nul gezet — iedereen die aanwezig was bouwt punten op. Zo schuift de beurt vanzelf door.
+        </div>
+        <div>
+          <div style="font-family:'Oswald';text-transform:uppercase;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:4px">Bevelvoerder (BV)</div>
+          BV's doen standaard niet mee met koken. Per dienst is dat aan te zetten als ze toch willen meedoen.
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn primary" onclick="closeHelp()">Duidelijk!</button>
     </div>
   </div>
 </div>
@@ -849,6 +886,8 @@ function restoreBackup(index) {
   closeManage(); render();
   toast('Hersteld naar ' + lbl);
 }
+function openHelp(){ document.getElementById('helpOverlay').classList.add('show'); }
+function closeHelp(){ document.getElementById('helpOverlay').classList.remove('show'); }
 document.getElementById('addName').addEventListener('keydown',e=>{if(e.key==='Enter')saveAdd();});
 document.getElementById('pinInput').addEventListener('keydown',e=>{if(e.key==='Enter')submitPin();});
 ['confirmOverlay','addOverlay','manageOverlay'].forEach(id=>{
@@ -856,6 +895,7 @@ document.getElementById('pinInput').addEventListener('keydown',e=>{if(e.key==='E
   o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('show');});
 });
 document.getElementById('pinOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('pinOverlay'))closePinOverlay();});
+document.getElementById('helpOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('helpOverlay'))closeHelp();});
 render();
 (async () => {
   const cloud = await loadFromCloud();
