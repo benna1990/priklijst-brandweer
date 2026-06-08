@@ -139,8 +139,8 @@
 <body>
 <header>
   <div class="wrap">
-    <h1>Priklijst <span class="badge">KOOK</span></h1>
-    <p>Brandweer kookrooster — wie het meest aanwezig is, kookt</p>
+    <h1>Priklijst</h1>
+    <p>Wie kookt?</p>
   </div>
 </header>
 <div class="wrap">
@@ -474,6 +474,8 @@
 <div class="toast" id="toast"></div>
 <script>
 const STORE_KEY = 'priklijst_brandweer_v3';
+const SUPABASE_URL = 'https://hhylodhsbfdhlfdqlxjp.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhoeWxvZGhzYmZkaGxmZHFseGpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4NzY3ODEsImV4cCI6MjA5NjQ1Mjc4MX0.ROZLXAHyzw1z_MDHHCuW589ebgSRF8z0vYxxUMIlNkQ';
 const SEED = [
   "Arjan Hennink","Barry Douma","Barry Fidder","Bas Schermer","Benjamin Ootjers",
   "Berend Gulien","Borre Combee","Brian Bruist","Brian Clarkson","Dave Davio",
@@ -503,7 +505,34 @@ function load() {
     history: []
   };
 }
-function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify({people, history})); } catch(e) {} }
+function save() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify({people, history})); } catch(e) {}
+  clearTimeout(save._t);
+  save._t = setTimeout(saveToCloud, 800);
+}
+async function loadFromCloud() {
+  try {
+    const res = await fetch(SUPABASE_URL+'/rest/v1/priklijst_state?id=eq.main&select=people,history', {
+      headers: {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer '+SUPABASE_KEY}
+    });
+    const rows = await res.json();
+    return rows[0] || null;
+  } catch(e) { return null; }
+}
+async function saveToCloud() {
+  try {
+    await fetch(SUPABASE_URL+'/rest/v1/priklijst_state', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer '+SUPABASE_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({id:'main', people, history, updated_at: new Date().toISOString()})
+    });
+  } catch(e) {}
+}
 
 function sortForCook(arr) {
   return [...arr].sort((a,b) => {
@@ -829,6 +858,15 @@ document.getElementById('pinInput').addEventListener('keydown',e=>{if(e.key==='E
 });
 document.getElementById('pinOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('pinOverlay'))closePinOverlay();});
 render();
+(async () => {
+  const cloud = await loadFromCloud();
+  if (cloud && Array.isArray(cloud.people)) {
+    people = cloud.people;
+    history = cloud.history || [];
+    try { localStorage.setItem(STORE_KEY, JSON.stringify({people, history})); } catch(e) {}
+    render();
+  }
+})();
 </script>
 
 
