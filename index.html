@@ -499,6 +499,15 @@
           <div style="font-family:'Oswald';text-transform:uppercase;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:4px">Bevelvoerder (BV)</div>
           BV's doen standaard niet mee met koken. Per dienst is dat aan te zetten als ze toch willen meedoen.
         </div>
+        <div style="background:#faf9f5;border-radius:8px;padding:12px 14px;border:1px solid var(--paper-line)">
+          <div style="font-family:'Oswald';text-transform:uppercase;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:8px">Bij gelijkstand</div>
+          Als meerdere mensen dezelfde teller hebben, beslist de app in deze volgorde:
+          <ol style="margin:8px 0 0 18px;display:flex;flex-direction:column;gap:4px;font-size:14px">
+            <li>Wie het minste <b>totaal gekookt</b> heeft</li>
+            <li>Wie de meeste <b>diensten</b> heeft gedraaid</li>
+            <li>Wie het <b>langst geleden</b> heeft gekookt (of nooit — die gaat altijd voor)</li>
+          </ol>
+        </div>
       </div>
     </div>
     <div class="modal-foot">
@@ -574,7 +583,10 @@ function sortForCook(arr) {
     if (b.counter !== a.counter) return b.counter - a.counter;
     if (a.cooked !== b.cooked) return a.cooked - b.cooked;
     if (b.diensten !== a.diensten) return b.diensten - a.diensten;
-    return (parseInt(b.stamb)||0) - (parseInt(a.stamb)||0);
+    // langst geleden gekookt gaat voor (ts=0 = nooit gekookt = altijd eerste)
+    const tsA = (history.find(h=>h.kokId===a.id)||{ts:0}).ts;
+    const tsB = (history.find(h=>h.kokId===b.id)||{ts:0}).ts;
+    return tsA - tsB;
   });
 }
 function sortAlpha(arr) {
