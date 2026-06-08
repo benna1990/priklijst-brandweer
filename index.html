@@ -51,7 +51,7 @@
   .rosterrow .nm small { display:block; font-weight:400; color:var(--muted); font-size:12px; }
   .chk { width:30px; height:30px; border-radius:6px; border:2px solid var(--paper-line); background:#fff; cursor:pointer; font-size:15px; line-height:1; flex:0 0 auto; }
   .chk.on { background:var(--green); border-color:var(--green); color:#fff; }
-  .roster-divider { font-family:'Oswald',sans-serif; font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); padding:10px 8px 4px; border-top:2px solid var(--paper-line); margin-top:4px; }
+  .rang-divider td { font-family:'Oswald',sans-serif; font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); padding:10px 8px 4px 16px; border-top:2px solid var(--paper-line); background:var(--paper); }
   .bv-toggle { font-family:'Oswald',sans-serif; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; padding:5px 9px; border-radius:14px; border:1.5px solid var(--paper-line); background:#fff; color:var(--muted); cursor:pointer; flex:0 0 auto; white-space:nowrap; }
   .bv-toggle.cooks { border-color:var(--green); color:var(--green); }
   .bv-toggle.nocook { border-color:var(--blue); color:var(--blue); background:#eef4fb; }
@@ -179,6 +179,11 @@
       <span class="count" id="dienstCount">0 aanwezig</span>
     </div>
     <div class="hint">Vink aanwezigen aan. Bevelvoerders staan standaard op "kookt niet", tik het label om per dienst te wisselen.</div>
+    <div id="dienstBanner" class="cooknow empty" style="display:none;border-radius:0;margin:0">
+      <div class="label">Zou koken bij deze selectie</div>
+      <div class="name" id="dienstBannerName"></div>
+      <div class="meta" id="dienstBannerMeta"></div>
+    </div>
     <div class="roster" id="roster"><div class="rosterrow ">
         <button class="chk " onclick="togglePresent(&#39;p0_1780899992530sw24&#39;)"></button>
         <div class="nm">Arjan Hennink
@@ -670,10 +675,7 @@ function updateToolbarLive() {
 }
 function renderDienst() {
   const roster = document.getElementById('roster');
-  const sorted = sortAlpha(people);
-  const regular = sorted.filter(p => !p.bevelvoerder);
-  const bvs    = sorted.filter(p => p.bevelvoerder);
-  const makeRow = p => {
+  roster.innerHTML = sortAlpha(people).map(p => {
     const isPresent = present.has(p.id);
     const cooks = cooksThisShift[p.id];
     let bvBtn = '';
@@ -683,10 +685,25 @@ function renderDienst() {
         <div class="nm">${esc(p.name)}${p.bevelvoerder?'<span class="role-pill">BV</span>':''}</div>
         ${bvBtn}
       </div>`;
-  };
-  let html = regular.map(makeRow).join('');
-  if (bvs.length) html += `<div class="roster-divider">Bevelvoerders</div>` + bvs.map(makeRow).join('');
-  roster.innerHTML = html || '<div class="empty-state">Geen personen. Voeg je ploeg toe.</div>';
+  }).join('') || '<div class="empty-state">Geen personen. Voeg je ploeg toe.</div>';
+  // Live banner: wie kookt bij huidige selectie
+  const banner = document.getElementById('dienstBanner');
+  const elig = eligibleCooks();
+  const top = elig[0] || null;
+  if (present.size > 0) {
+    banner.style.display = '';
+    if (top) {
+      banner.className = 'cooknow'; banner.style.borderRadius='0'; banner.style.margin='0';
+      document.getElementById('dienstBannerName').textContent = top.name;
+      document.getElementById('dienstBannerMeta').textContent = `Teller ${top.counter} · ${top.cooked}x gekookt · ${top.diensten} diensten`;
+    } else {
+      banner.className = 'cooknow empty'; banner.style.borderRadius='0'; banner.style.margin='0';
+      document.getElementById('dienstBannerName').textContent = 'Niemand kookt';
+      document.getElementById('dienstBannerMeta').textContent = 'Iedereen staat op "kookt niet"';
+    }
+  } else {
+    banner.style.display = 'none';
+  }
   const n = present.size;
   const cc = document.getElementById('dienstCount');
   cc.textContent = n + ' aanwezig';
@@ -695,7 +712,9 @@ function renderDienst() {
 }
 function renderRang() {
   const sorted = sortForCook(people);
-  const next = sorted.find(p => !p.bevelvoerder) || sorted[0] || null;
+  const regular = sorted.filter(p => !p.bevelvoerder);
+  const bvs    = sorted.filter(p => p.bevelvoerder);
+  const next = regular[0] || null;
   const cn = document.getElementById('cooknow');
   if (!next) {
     cn.className = 'cooknow empty';
@@ -707,14 +726,26 @@ function renderRang() {
       <div class="meta">Teller ${next.counter} · ${next.cooked}x gekookt · ${next.diensten} diensten</div>`;
   }
   document.getElementById('emptystate').style.display = people.length ? 'none' : 'block';
-  document.getElementById('tbody').innerHTML = sorted.map((p, idx) => `
+  let rows = regular.map((p, idx) => `
     <tr class="${next && p.id===next.id ? 'next-cook':''}">
       <td class="rank">${idx+1}</td>
-      <td class="name-col">${esc(p.name)}${p.bevelvoerder?'<span class="role-pill">BV</span>':''}</td>
+      <td class="name-col">${esc(p.name)}</td>
       <td><span class="counter">${p.counter}</span></td>
       <td class="hide-mobile substat">${p.cooked}x</td>
       <td class="hide-mobile substat">${p.diensten}</td>
     </tr>`).join('');
+  if (bvs.length) {
+    rows += `<tr class="rang-divider"><td colspan="5">Bevelvoerders</td></tr>`;
+    rows += bvs.map(p => `
+    <tr>
+      <td class="rank" style="color:var(--muted)">—</td>
+      <td class="name-col">${esc(p.name)}<span class="role-pill">BV</span></td>
+      <td><span class="counter" style="color:var(--muted);font-size:16px">${p.counter}</span></td>
+      <td class="hide-mobile substat">${p.cooked}x</td>
+      <td class="hide-mobile substat">${p.diensten}</td>
+    </tr>`).join('');
+  }
+  document.getElementById('tbody').innerHTML = rows;
 }
 function renderHist() {
   const list = document.getElementById('histList');
