@@ -902,7 +902,7 @@ function undoAt(index) {
       const k = people.find(x=>x.id===h.kokId);
       if (k) {
         k.cooked = Math.max(0,k.cooked-1);
-        if (h.kokCounterSnapshot != null) k.counter = h.kokCounterSnapshot;
+        if (h.kokCounterSnapshot != null) k.counter = Math.max(0, h.kokCounterSnapshot - 1);
       }
     }
     history.splice(index, 1);
