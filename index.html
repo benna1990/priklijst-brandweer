@@ -4,7 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Priklijst Victor</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23c1272d'/><text y='.90em' font-size='74' x='11'>🔥</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%232b2f36'/><path d='M35,82 C28,75 24,66 30,60 C32,55 38,55 40,60 C46,66 42,75 35,82Z' fill='%23d4890a'/><path d='M50,86 C42,76 38,63 44,53 C46,48 54,48 56,53 C62,63 58,76 50,86Z' fill='%23f0a800'/><path d='M65,82 C58,75 54,66 60,60 C62,55 68,55 70,60 C76,66 72,75 65,82Z' fill='%23d4890a'/><circle cx='50' cy='42' r='22' fill='%23f4f1ea'/><path d='M71,38 Q83,36 87,42 Q83,48 71,46Z' fill='%23f4f1ea'/><line x1='37' y1='34' x2='63' y2='34' stroke='%23c1272d' stroke-width='4.5' stroke-linecap='round'/><line x1='37' y1='43' x2='63' y2='43' stroke='%23c1272d' stroke-width='4.5' stroke-linecap='round'/><line x1='37' y1='52' x2='53' y2='52' stroke='%23c1272d' stroke-width='4.5' stroke-linecap='round'/></svg>">
 <meta name="theme-color" content="#c1272d">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1045,23 +1045,39 @@ function closeHelp(){ document.getElementById('helpOverlay').classList.remove('s
 // Genereer apple-touch-icon dynamisch (canvas → PNG data-URI)
 (function() {
   try {
-    const sz = 192, r = 36;
+    const sz = 192, s = sz/100;
     const c = document.createElement('canvas');
     c.width = c.height = sz;
     const ctx = c.getContext('2d');
+    // Achtergrond: donker staal, afgeronde hoeken
+    const br = 18*s;
+    ctx.fillStyle = '#2b2f36';
     ctx.beginPath();
-    ctx.moveTo(r,0); ctx.lineTo(sz-r,0); ctx.arcTo(sz,0,sz,r,r);
-    ctx.lineTo(sz,sz-r); ctx.arcTo(sz,sz,sz-r,sz,r);
-    ctx.lineTo(r,sz); ctx.arcTo(0,sz,0,sz-r,r);
-    ctx.lineTo(0,r); ctx.arcTo(0,0,r,0,r); ctx.closePath();
-    ctx.fillStyle='#c1272d'; ctx.fill();
-    ctx.font='bold italic 52px Oswald,sans-serif';
-    ctx.fillStyle='rgba(255,255,255,0.18)';
-    ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText('V', sz/2+2, sz/2+4);
-    ctx.font='112px serif';
-    ctx.fillStyle='#fff';
-    ctx.fillText('🔥', sz/2, sz/2+2);
+    ctx.moveTo(br,0); ctx.lineTo(sz-br,0); ctx.arcTo(sz,0,sz,br,br);
+    ctx.lineTo(sz,sz-br); ctx.arcTo(sz,sz,sz-br,sz,br);
+    ctx.lineTo(br,sz); ctx.arcTo(0,sz,0,sz-br,br);
+    ctx.lineTo(0,br); ctx.arcTo(0,0,br,0,br); ctx.closePath();
+    ctx.fill();
+    // Schaal naar 0-100 coördinatenruimte
+    ctx.save(); ctx.scale(s,s);
+    // Vlammen (links, midden, rechts)
+    ctx.fillStyle='#d4890a';
+    ctx.fill(new Path2D('M35,82 C28,75 24,66 30,60 C32,55 38,55 40,60 C46,66 42,75 35,82Z'));
+    ctx.fillStyle='#f0a800';
+    ctx.fill(new Path2D('M50,86 C42,76 38,63 44,53 C46,48 54,48 56,53 C62,63 58,76 50,86Z'));
+    ctx.fillStyle='#d4890a';
+    ctx.fill(new Path2D('M65,82 C58,75 54,66 60,60 C62,55 68,55 70,60 C76,66 72,75 65,82Z'));
+    // Pan (cirkel + steel)
+    ctx.fillStyle='#f4f1ea';
+    ctx.beginPath(); ctx.arc(50,42,22,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#f4f1ea';
+    ctx.fill(new Path2D('M71,38 Q83,36 87,42 Q83,48 71,46Z'));
+    // Lijntjes in de pan (de priklijst)
+    ctx.strokeStyle='#c1272d'; ctx.lineWidth=4.5; ctx.lineCap='round';
+    [[37,34,63,34],[37,43,63,43],[37,52,53,52]].forEach(([x1,y1,x2,y2])=>{
+      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    });
+    ctx.restore();
     const link = document.createElement('link');
     link.rel='apple-touch-icon'; link.href=c.toDataURL('image/png');
     document.head.appendChild(link);
