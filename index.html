@@ -115,7 +115,9 @@
   .empty-state .big { font-size: 40px; margin-bottom: 10px; }
   /* HISTORY */
   .hist-item { padding:14px 18px; border-bottom:1px solid var(--paper-line); }
-  .hist-item .top { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .hist-item .top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .hist-item .top-left { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; flex:1; min-width:0; }
+  .hist-item .top-btns { display:flex; gap:4px; flex-shrink:0; margin-left:auto; }
   .hist-item .kok { font-family:'Oswald',sans-serif; font-size:18px; font-weight:600; }
   .hist-item .kok::before { content:"🔥 "; }
   .hist-item .date { color:var(--muted); font-size:13px; }
@@ -817,7 +819,10 @@ function renderHist() {
     if (type === 'nieuw_lid') {
       return `<div class="hist-item hist-nieuw-lid">
         <div class="hist-type-badge">👤 Nieuwe collega</div>
-        <div class="top"><span class="kok-alt">${esc(h.kokNaam)}</span><span class="date">${datum}</span>${delBtn}</div>
+        <div class="top">
+          <div class="top-left"><span class="kok-alt">${esc(h.kokNaam)}</span><span class="date">${datum}</span></div>
+          <div class="top-btns">${delBtn}</div>
+        </div>
         <div class="det">Begin-teller: ${h.beginCounter ?? 0}</div>
       </div>`;
     }
@@ -830,15 +835,18 @@ function renderHist() {
       }
       return `<div class="hist-item hist-aanpassing">
         <div class="hist-type-badge">✏️ Handmatige aanpassing</div>
-        <div class="top"><span class="kok-alt">${esc(h.kokNaam)}</span><span class="date">${datum}</span>${delBtn}</div>
+        <div class="top">
+          <div class="top-left"><span class="kok-alt">${esc(h.kokNaam)}</span><span class="date">${datum}</span></div>
+          <div class="top-btns">${delBtn}</div>
+        </div>
         <div class="det">${changes.join(' · ') || 'Gewijzigd'}</div>
       </div>`;
     }
     const editBtn = `<button class="btn ghost hist-undo" onclick="editDienst(${i})" title="Bewerken" style="padding:5px 8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>`;
     return `<div class="hist-item">
       <div class="top">
-        <span class="kok">${esc(h.kokNaam)}</span>
-        <span class="date">${datum}</span>${editBtn}${delBtn}
+        <div class="top-left"><span class="kok">${esc(h.kokNaam)}</span><span class="date">${datum}</span></div>
+        <div class="top-btns">${editBtn}${delBtn}</div>
       </div>
       <div class="det">${h.aantal} aanwezig${h.handmatig?' · handmatig gekozen':''}</div>
       <div class="att">${h.aanwezigen.map(esc).join(', ')}</div>
