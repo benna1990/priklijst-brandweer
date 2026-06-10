@@ -65,6 +65,17 @@
   .hist-type-badge { font-size:11px; font-family:'Oswald'; text-transform:uppercase; letter-spacing:0.5px; padding:2px 8px; border-radius:10px; display:inline-block; margin-bottom:4px; }
   .hist-nieuw-lid .hist-type-badge { background:#eef6f1; color:var(--green); border:1px solid #b9dfc8; }
   .hist-aanpassing .hist-type-badge { background:#fdf5e0; color:#8a6c00; border:1px solid #f0d98a; }
+  .log-item { padding:10px 16px; border-bottom:1px solid var(--paper-line); font-size:13px; }
+  .log-item:last-child { border-bottom:none; }
+  .log-time { font-size:11px; color:var(--muted); font-family:'Oswald'; letter-spacing:0.5px; margin-bottom:3px; }
+  .log-badge { font-size:10px; font-family:'Oswald'; text-transform:uppercase; letter-spacing:0.5px; padding:2px 7px; border-radius:10px; display:inline-block; margin-right:6px; }
+  .log-badge.dienst_toegevoegd { background:#eef6f1; color:var(--green); border:1px solid #b9dfc8; }
+  .log-badge.dienst_bewerkt    { background:#fdf5e0; color:#8a6c00; border:1px solid #f0d98a; }
+  .log-badge.history_verwijderd{ background:#fdeaea; color:var(--red); border:1px solid #f0b8b8; }
+  .log-badge.tellers_aangepast { background:#eef4fb; color:var(--blue); border:1px solid #b8d4f0; }
+  .log-badge.collega_toegevoegd{ background:#eef6f1; color:var(--green); border:1px solid #b9dfc8; }
+  .log-badge.pin_gewijzigd     { background:#f0f0f0; color:#555; border:1px solid #ccc; }
+  .log-badge.backup_hersteld   { background:#fff3e0; color:#b36a00; border:1px solid #f0c880; }
   .hist-item .kok-alt { font-family:'Oswald',sans-serif; font-size:16px; font-weight:600; }
   table { width: 100%; border-collapse: collapse; }
   thead th { background: var(--steel); color: #fff; font-family: 'Oswald', sans-serif; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; font-size: 12px; padding: 11px 8px; text-align: center; white-space: nowrap; }
@@ -177,6 +188,7 @@
     <button class="tab active" id="tabDienst" onclick="setMode(&#39;dienst&#39;)">Dienst</button>
     <button class="tab" id="tabRang" onclick="setMode(&#39;rang&#39;)">Ranglijst</button>
     <button class="tab" id="tabHist" onclick="setMode(&#39;hist&#39;)">Historie</button>
+    <button class="tab" id="tabLog" onclick="setMode(&#39;log&#39;)">Logboek</button>
   </div>
   <div class="panel" id="panelDienst">
     <div class="dienst-head">
@@ -404,6 +416,11 @@
     <div id="histList"></div>
     <div id="histEmpty" class="empty-state"><div class="big">📜</div>Nog geen verwerkte diensten.</div>
   </div>
+  <div class="panel hidden" id="panelLog">
+    <div style="padding:10px 16px 6px;font-size:12px;color:var(--muted);font-family:'Oswald';text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--paper-line)">Automatisch logboek — alleen-lezen</div>
+    <div id="logList"></div>
+    <div id="logEmpty" class="empty-state"><div class="big">🔍</div>Nog geen wijzigingen geregistreerd.</div>
+  </div>
   <div class="toolbar">
     <span class="counthint" id="counthint" style="display:none"></span>
     <span class="toolbar-live" id="toolbarLive">0 geselecteerd</span>
@@ -612,6 +629,7 @@ let mode = 'dienst';
 let state = load();
 let people = state.people;
 let history = state.history;
+let auditLog = state.auditLog;
 let present = new Set();
 let cooksThisShift = {};
 let selectedKokId = null;
@@ -619,16 +637,16 @@ let selectedKokId = null;
 function load() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
-    if (raw) { const d = JSON.parse(raw); return { people: d.people||[], history: d.history||[] }; }
+    if (raw) { const d = JSON.parse(raw); return { people: d.people||[], history: d.history||[], auditLog: d.auditLog||[] }; }
   } catch(e) {}
   return {
     people: SEED.map((n,i) => ({ id: 'p'+i+'_'+Date.now()+Math.random().toString(36).slice(2,6),
       name: n, stamb: '', counter: 0, cooked: 0, diensten: 0, bevelvoerder: false })),
-    history: []
+    history: [], auditLog: []
   };
 }
 function save() {
-  try { localStorage.setItem(STORE_KEY, JSON.stringify({people, history})); } catch(e) {}
+  try { localStorage.setItem(STORE_KEY, JSON.stringify({people, history, auditLog})); } catch(e) {}
   clearTimeout(save._t);
   save._t = setTimeout(saveToCloud, 800);
 }
@@ -677,7 +695,7 @@ function eligibleCooks() {
 }
 function setMode(m) {
   mode = m;
-  ['Dienst','Rang','Hist'].forEach(x => {
+  ['Dienst','Rang','Hist','Log'].forEach(x => {
     document.getElementById('tab'+x).classList.toggle('active', m===x.toLowerCase());
     document.getElementById('panel'+x).classList.toggle('hidden', m!==x.toLowerCase());
   });
@@ -692,7 +710,8 @@ function defaultCooks(p) { return !p.bevelvoerder; }
 function render() {
   if (mode === 'dienst') renderDienst();
   else if (mode === 'rang') renderRang();
-  else renderHist();
+  else if (mode === 'hist') renderHist();
+  else if (mode === 'log') renderLog();
   document.getElementById('counthint').textContent =
     people.length + ' personen · ' + people.filter(p=>p.bevelvoerder).length + ' bevelvoerder(s)';
   save();
@@ -804,6 +823,33 @@ function renderHist() {
     </div>`;
   }).join('');
 }
+function renderLog() {
+  const list = document.getElementById('logList');
+  document.getElementById('logEmpty').style.display = auditLog.length ? 'none' : 'block';
+  const labels = {
+    dienst_toegevoegd:  'Dienst toegevoegd',
+    dienst_bewerkt:     'Dienst bewerkt',
+    history_verwijderd: 'Log verwijderd',
+    tellers_aangepast:  'Tellers aangepast',
+    collega_toegevoegd: 'Collega toegevoegd',
+    pin_gewijzigd:      'PIN gewijzigd',
+    backup_hersteld:    'Backup hersteld',
+  };
+  list.innerHTML = auditLog.map(e => {
+    const d = new Date(e.ts);
+    const tijd = d.toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short',year:'numeric'})
+      + ' ' + d.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit', timeZone:'Europe/Amsterdam'});
+    const lbl = labels[e.type] || e.type;
+    return `<div class="log-item">
+      <div class="log-time">${tijd}</div>
+      <span class="log-badge ${e.type}">${lbl}</span>${esc(e.tekst)}
+    </div>`;
+  }).join('');
+}
+function addAuditEntry(type, tekst) {
+  auditLog.unshift({ ts: Date.now(), type, tekst });
+  if (auditLog.length > 300) auditLog.splice(300);
+}
 function togglePresent(id) {
   const p = people.find(x=>x.id===id);
   if (present.has(id)) { present.delete(id); delete cooksThisShift[id]; }
@@ -893,8 +939,9 @@ function confirmCommit() {
   });
   closeConfirm();
   present.clear(); cooksThisShift = {}; selectedKokId = null;
+  addAuditEntry('dienst_toegevoegd', `Dienst ${dienstDate} verwerkt — ${kok ? kok.name + ' kookt' : 'geen kok'} voor ${aanwezigen.length} aanwezigen`);
   saveBackup();
-  render();
+  save(); render();
   toast(kok ? `${kok.name} kookt, dienst verwerkt` : 'Dienst verwerkt (geen kok)');
 }
 function undoAt(index) {
@@ -1011,6 +1058,10 @@ function saveEditDienst() {
     handmatig: true,
     kokCounterSnapshot: newSnapshot,
   };
+  const oudKok = h.kokNaam || 'geen kok';
+  const nieuwKok = newKok ? newKok.name : 'geen kok';
+  const kokWijziging = oudKok !== nieuwKok ? ` — kok: ${oudKok} → ${nieuwKok}` : '';
+  addAuditEntry('dienst_bewerkt', `Dienst ${newDate} bewerkt${kokWijziging} (${newIds.length} aanwezigen)`);
   closeEditDienst();
   save();
   render();
@@ -1023,7 +1074,10 @@ function closeEditDienst() {
 function removeHistEntry(index) {
   requirePin(() => {
     if (!confirm('Dit logitem verwijderen uit de geschiedenis?\n(Tellers worden niet aangepast.)')) return;
+    const h = history[index];
+    const omschr = h ? `Dienstlog ${h.dienstDate||'?'} verwijderd (kok: ${h.kokNaam||'?'}, ${h.aantal||0} aanwezigen)` : 'Logitem verwijderd';
     history.splice(index, 1);
+    addAuditEntry('history_verwijderd', omschr);
     save();
     render();
     toast('Verwijderd uit geschiedenis');
@@ -1064,6 +1118,8 @@ function saveAdd() {
     kokCounterSnapshot: null, aantal: 0, aanwezigen: [], aanwezigenIds: [], handmatig: false,
     type: 'nieuw_lid', beginCounter: counter
   });
+  addAuditEntry('collega_toegevoegd', `${name} toegevoegd aan de lijst (teller ${counter}, gekookt ${cooked}, diensten ${diensten}${bevelvoerder?' — BV':''})`);
+  save();
   const fromManage = _addFromManage;
   _addFromManage = false;
   document.getElementById('addOverlay').classList.remove('show');
@@ -1131,6 +1187,9 @@ function saveStatsEdit() {
       to: { counter: newCounter, cooked: newCooked, diensten: newDiensten }
     });
   }
+  if (newCounter !== p.counter || newCooked !== p.cooked || newDiensten !== p.diensten) {
+    addAuditEntry('tellers_aangepast', `${p.name}: teller ${p.counter}→${newCounter}, gekookt ${p.cooked}→${newCooked}, diensten ${p.diensten}→${newDiensten}`);
+  }
   p.counter = newCounter; p.cooked = newCooked; p.diensten = newDiensten;
   closeStatsEdit();
   save(); toast(p.name + ' bijgewerkt');
@@ -1193,6 +1252,8 @@ function changePin() {
   if (!val || val.length < 4) { toast('PIN moet minimaal 4 cijfers zijn'); return; }
   localStorage.setItem(STORE_KEY+'_pin', val);
   document.getElementById('newPinInput').value = '';
+  addAuditEntry('pin_gewijzigd', 'PIN gewijzigd');
+  save();
   toast('PIN opgeslagen');
 }
 // --- AUTO-BACKUP ---
@@ -1215,7 +1276,8 @@ function restoreBackup(index) {
   people = restored.people || [];
   history = restored.history || [];
   present.clear(); cooksThisShift = {};
-  closeManage(); render();
+  addAuditEntry('backup_hersteld', `Data hersteld vanuit backup van ${lbl}`);
+  save(); closeManage(); render();
   toast('Hersteld naar ' + lbl);
 }
 function openHelp(){ document.getElementById('helpOverlay').classList.add('show'); }
@@ -1303,7 +1365,8 @@ render();
   if (cloud && Array.isArray(cloud.people)) {
     people = cloud.people;
     history = cloud.history || [];
-    try { localStorage.setItem(STORE_KEY, JSON.stringify({people, history})); } catch(e) {}
+    // auditLog blijft device-lokaal — niet overschreven door cloud sync
+    try { localStorage.setItem(STORE_KEY, JSON.stringify({people, history, auditLog})); } catch(e) {}
     render();
   }
 })();
