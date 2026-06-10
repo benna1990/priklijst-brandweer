@@ -912,10 +912,13 @@ function undoAt(index) {
 }
 function undoLast() { undoAt(0); }
 function removeHistEntry(index) {
-  if (!confirm('Dit logitem verwijderen uit de geschiedenis?\n(Tellers worden niet aangepast.)')) return;
-  history.splice(index, 1);
-  render();
-  toast('Verwijderd uit geschiedenis');
+  requirePin(() => {
+    if (!confirm('Dit logitem verwijderen uit de geschiedenis?\n(Tellers worden niet aangepast.)')) return;
+    history.splice(index, 1);
+    save();
+    render();
+    toast('Verwijderd uit geschiedenis');
+  });
 }
 function openAdd() { requirePin(doOpenAdd); }
 function doOpenAdd() {
