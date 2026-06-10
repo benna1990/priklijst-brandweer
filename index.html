@@ -572,6 +572,17 @@
     </div>
   </div>
 </div>
+<!-- DIENST BEWERKEN MODAL -->
+<div class="overlay" id="editDienstOverlay">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-head">Dienst bewerken <button class="x" onclick="closeEditDienst()">×</button></div>
+    <div class="modal-body" id="editDienstBody"></div>
+    <div class="modal-foot">
+      <button class="btn ghost" onclick="closeEditDienst()">Annuleren</button>
+      <button class="btn primary" onclick="saveEditDienst()">Opslaan</button>
+    </div>
+  </div>
+</div>
 <!-- PERSON DETAIL MODAL -->
 <div class="overlay" id="personOverlay">
   <div class="modal" style="max-width:360px">
@@ -777,11 +788,11 @@ function renderHist() {
         <div class="det">${changes.join(' · ') || 'Gewijzigd'}</div>
       </div>`;
     }
-    const undoBtn = `<button class="btn ghost hist-undo" onclick="undoAt(${i})" title="Maak ongedaan" style="padding:5px 8px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>`;
+    const editBtn = `<button class="btn ghost hist-undo" onclick="editDienst(${i})" title="Bewerken" style="padding:5px 8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>`;
     return `<div class="hist-item">
       <div class="top">
         <span class="kok">${esc(h.kokNaam)}</span>
-        <span class="date">${datum}</span>${undoBtn}
+        <span class="date">${datum}</span>${editBtn}${delBtn}
       </div>
       <div class="det">${h.aantal} aanwezig${h.handmatig?' · handmatig gekozen':''}</div>
       <div class="att">${h.aanwezigen.map(esc).join(', ')}</div>
@@ -911,6 +922,99 @@ function undoAt(index) {
   });
 }
 function undoLast() { undoAt(0); }
+
+// --- DIENST BEWERKEN ---
+let _editIndex = -1;
+function editDienst(index) {
+  if (index < 0 || index >= history.length) return;
+  _editIndex = index;
+  const h = history[index];
+  const dateVal = h.dienstDate || new Date(h.ts).toISOString().slice(0,10);
+  const attendeeRows = people.map(p => {
+    const checked = h.aanwezigenIds.includes(p.id) ? 'checked' : '';
+    return `<label style="display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--paper-line);font-size:14px;font-weight:${checked?'600':'400'}">
+      <input type="checkbox" value="${p.id}" ${checked} onchange="updateEditKokOptions()" style="width:16px;height:16px;accent-color:var(--red);flex:0 0 auto">
+      ${esc(p.name)}${p.bevelvoerder?'<span class="role-pill" style="font-size:9px">BV</span>':''}
+    </label>`;
+  }).join('');
+  document.getElementById('editDienstBody').innerHTML = `
+    <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <label style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);font-family:'Oswald';white-space:nowrap;margin:0">Datum dienst</label>
+      <input type="date" id="editDate" value="${dateVal}" style="padding:7px 10px;font-size:14px;border:2px solid var(--paper-line);border-radius:6px;font-family:'Barlow';background:#fff;flex:0 0 auto">
+    </div>
+    <div class="pick-label">Aanwezig</div>
+    <div id="editAttendees" style="max-height:220px;overflow-y:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--paper-line);border-radius:6px;margin-bottom:14px">${attendeeRows}</div>
+    <div class="pick-label">Kok</div>
+    <select id="editKok" style="width:100%;padding:9px 10px;font-size:14px;border:2px solid var(--paper-line);border-radius:6px;font-family:'Barlow';background:#fff"></select>
+    <div style="font-size:12px;color:var(--muted);margin-top:8px">De vorige aanwezigen en kok worden teruggedraaid, de nieuwe worden toegepast.</div>`;
+  updateEditKokOptions();
+  document.getElementById('editDienstOverlay').classList.add('show');
+}
+function updateEditKokOptions() {
+  const h = history[_editIndex];
+  const checked = [...document.querySelectorAll('#editAttendees input[type=checkbox]:checked')].map(cb => cb.value);
+  const sel = document.getElementById('editKok');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— geen kok —</option>' +
+    checked.map(id => {
+      const p = people.find(x => x.id === id);
+      if (!p) return '';
+      return `<option value="${id}" ${id === h.kokId ? 'selected' : ''}>${esc(p.name)}</option>`;
+    }).join('');
+}
+function saveEditDienst() {
+  if (_editIndex < 0) return;
+  const h = history[_editIndex];
+  const newDate = document.getElementById('editDate').value || h.dienstDate;
+  const newIds = [...document.querySelectorAll('#editAttendees input[type=checkbox]:checked')].map(cb => cb.value);
+  const newKokId = document.getElementById('editKok').value || null;
+  if (!newIds.length) { alert('Selecteer minstens één aanwezige.'); return; }
+  // Rollback oude staat
+  h.aanwezigenIds.forEach(id => {
+    const p = people.find(x => x.id === id);
+    if (p) { p.counter = Math.max(0, p.counter - 1); p.diensten = Math.max(0, p.diensten - 1); }
+  });
+  if (h.kokId) {
+    const k = people.find(x => x.id === h.kokId);
+    if (k) {
+      k.cooked = Math.max(0, k.cooked - 1);
+      if (h.kokCounterSnapshot != null) k.counter = Math.max(0, h.kokCounterSnapshot - 1);
+    }
+  }
+  // Nieuwe staat toepassen
+  newIds.forEach(id => {
+    const p = people.find(x => x.id === id);
+    if (p) { p.counter += 1; p.diensten += 1; }
+  });
+  let newSnapshot = null;
+  const newKok = newKokId ? people.find(x => x.id === newKokId) : null;
+  if (newKok) {
+    newSnapshot = newKok.counter;
+    newKok.counter = 0;
+    newKok.cooked += 1;
+  }
+  // History entry bijwerken
+  history[_editIndex] = {
+    ...h,
+    ts: h.ts,
+    dienstDate: newDate,
+    aanwezigenIds: newIds,
+    aanwezigen: newIds.map(id => (people.find(x => x.id === id)||{}).name).filter(Boolean),
+    aantal: newIds.length,
+    kokId: newKokId,
+    kokNaam: newKok ? newKok.name : null,
+    handmatig: true,
+    kokCounterSnapshot: newSnapshot,
+  };
+  closeEditDienst();
+  save();
+  render();
+  toast('Dienst bijgewerkt');
+}
+function closeEditDienst() {
+  document.getElementById('editDienstOverlay').classList.remove('show');
+  _editIndex = -1;
+}
 function removeHistEntry(index) {
   requirePin(() => {
     if (!confirm('Dit logitem verwijderen uit de geschiedenis?\n(Tellers worden niet aangepast.)')) return;
@@ -1182,7 +1286,7 @@ document.getElementById('pinInput').addEventListener('keydown',e=>{if(e.key==='E
 ['statsEditCounter','statsEditCooked','statsEditDiensten'].forEach(id=>{
   document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')saveStatsEdit();});
 });
-['confirmOverlay','addOverlay','manageOverlay','statsEditOverlay','personOverlay'].forEach(id=>{
+['confirmOverlay','addOverlay','manageOverlay','statsEditOverlay','personOverlay','editDienstOverlay'].forEach(id=>{
   const o=document.getElementById(id);
   o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('show');});
 });
