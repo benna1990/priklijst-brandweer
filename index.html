@@ -80,6 +80,23 @@
   .log-badge.backup_hersteld       { background:#fff3e0; color:#b36a00; border:1px solid #f0c880; }
   .log-badge.instellingen_gewijzigd{ background:#f0f0f0; color:#555; border:1px solid #ccc; }
   .log-badge.sync_waarschuwing     { background:#fdeaea; color:var(--red); border:1px solid #f0b8b8; font-weight:700; }
+  /* Maaltijdscore */
+  .score-badge { font-family:'Oswald',sans-serif; font-size:12px; font-weight:600; padding:2px 7px; border-radius:10px; display:inline-block; }
+  .score-badge.s-low  { background:#fdeaea; color:var(--red); border:1px solid #f0b8b8; }
+  .score-badge.s-mid  { background:#fdf5e0; color:#8a6c00; border:1px solid #f0d98a; }
+  .score-badge.s-good { background:#eef6f1; color:var(--green); border:1px solid #b9dfc8; }
+  .score-badge.s-top  { background:#fff8e0; color:#8a6c00; border:1px solid var(--gold); }
+  .score-pick-btn { font-family:'Oswald',sans-serif; font-size:18px; font-weight:700; padding:12px 0; border:2px solid var(--paper-line); border-radius:8px; background:#fff; cursor:pointer; width:100%; transition:all 0.1s; }
+  .score-pick-btn:active, .score-pick-btn.sel { border-color:var(--red); color:var(--red); background:#fdeaea; }
+  .setting-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--paper-line); }
+  .setting-row:last-child { border-bottom:none; }
+  .setting-row label { font-size:14px; cursor:pointer; flex:1; }
+  .toggle-switch { position:relative; width:44px; height:24px; flex-shrink:0; }
+  .toggle-switch input { opacity:0; width:0; height:0; position:absolute; }
+  .toggle-track { position:absolute; inset:0; background:#ccc; border-radius:12px; transition:background 0.2s; cursor:pointer; }
+  .toggle-track::after { content:''; position:absolute; width:18px; height:18px; border-radius:50%; background:#fff; top:3px; left:3px; transition:transform 0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.2); }
+  .toggle-switch input:checked + .toggle-track { background:var(--green); }
+  .toggle-switch input:checked + .toggle-track::after { transform:translateX(20px); }
   .hist-item .kok-alt { font-family:'Oswald',sans-serif; font-size:16px; font-weight:600; }
   table { width: 100%; border-collapse: collapse; }
   thead th { background: var(--steel); color: #fff; font-family: 'Oswald', sans-serif; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; font-size: 12px; padding: 11px 8px; text-align: center; white-space: nowrap; }
@@ -407,6 +424,7 @@
           <th class="name-col">Naam</th>
           <th title="Diensten aanwezig zonder te koken — hoog = eerder aan de beurt">Beurtteller</th>
           <th class="hide-mobile" title="Hoe vaak totaal gekookt">Gekookt</th>
+          <th class="hide-mobile" title="Gemiddelde maaltijdscore" id="thScore" style="display:none">Score</th>
           <th class="hide-mobile" title="Hoe vaak totaal aanwezig geweest">Diensten</th>
         </tr>
       </thead>
@@ -491,6 +509,22 @@
       <div id="backupList"></div>
     </div>
     <div style="padding:0 20px 16px;border-top:1px solid var(--paper-line);margin-top:12px">
+      <div class="pick-label" style="margin:12px 0 8px">Dienst instellingen</div>
+      <div class="setting-row">
+        <label for="waarschuwingToggle">Kleur- en tekstwaarschuwingen</label>
+        <label class="toggle-switch"><input type="checkbox" id="waarschuwingToggle" onchange="toggleDienstWaarschuwing()"><span class="toggle-track"></span></label>
+      </div>
+      <div class="setting-row" style="gap:10px">
+        <label for="dienstGrootteInput" style="flex:1">Verwacht aantal in dienst</label>
+        <input id="dienstGrootteInput" type="number" min="1" max="99" style="width:56px;padding:6px 8px;border:1.5px solid var(--paper-line);border-radius:5px;font-family:'Barlow';font-size:14px;text-align:center">
+        <button class="btn ghost" style="padding:6px 12px" onclick="saveDienstGrootte()">OK</button>
+      </div>
+      <div class="setting-row">
+        <label for="beoordelingToggle">Maaltijdbeoordeling (0–10)</label>
+        <label class="toggle-switch"><input type="checkbox" id="beoordelingToggle" onchange="toggleBeoordeling()"><span class="toggle-track"></span></label>
+      </div>
+    </div>
+    <div style="padding:0 20px 16px;border-top:1px solid var(--paper-line);margin-top:12px">
       <div class="pick-label" style="margin:12px 0 6px">PIN wijzigen</div>
       <div style="display:flex;gap:8px">
         <input id="newPinInput" type="password" maxlength="6" inputmode="numeric" placeholder="Nieuwe PIN (min. 4 cijfers)" style="flex:1;padding:8px 10px;border:1.5px solid var(--paper-line);border-radius:5px;font-family:'Barlow';font-size:14px">
@@ -548,6 +582,17 @@
     <div style="padding:8px 16px 6px;font-size:11px;color:var(--muted);font-family:'Oswald';text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--paper-line)">Alleen-lezen — automatisch bijgehouden</div>
     <div id="logList"></div>
     <div id="logEmpty" class="empty-state" style="padding:24px"><div class="big" style="font-size:28px">🔍</div>Nog geen wijzigingen geregistreerd.</div>
+  </div>
+</div>
+<div class="overlay" id="scoreOverlay">
+  <div class="modal" style="max-width:320px">
+    <div class="modal-head">Beoordeling <button class="x" onclick="closeScore()">×</button></div>
+    <div class="modal-body" style="text-align:center">
+      <div id="scoreKokNaam" style="font-family:'Oswald';font-size:15px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px"></div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:16px">Geef een cijfer voor deze maaltijd (0–10)</div>
+      <div id="scorePicker" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px"></div>
+      <button class="btn danger" style="width:100%;margin-top:8px;font-size:13px" onclick="saveScore(null)">Score wissen</button>
+    </div>
   </div>
 </div>
 <div class="overlay" id="helpOverlay">
@@ -648,10 +693,11 @@ function load() {
     const raw = localStorage.getItem(STORE_KEY);
     if (raw) {
       const d = JSON.parse(raw);
-      return { people: d.people||[], history: d.history||[], auditLog: d.auditLog||[], config: d.config||{kazerneNaam:'Priklijst',pin:'1234'} };
+      const cfg = d.config || {};
+      return { people: d.people||[], history: d.history||[], auditLog: d.auditLog||[], config: {kazerneNaam:'Priklijst',pin:'1234',dienstGrootte:8,dienstWaarschuwing:true,beoordelingActief:false,...cfg} };
     }
   } catch(e) {}
-  return { people: [], history: [], auditLog: [], config: {kazerneNaam:'Priklijst', pin:'1234'} };
+  return { people: [], history: [], auditLog: [], config: {kazerneNaam:'Priklijst',pin:'1234',dienstGrootte:8,dienstWaarschuwing:true,beoordelingActief:false} };
 }
 function save() {
   try { localStorage.setItem(STORE_KEY, JSON.stringify({people, history, auditLog, config})); } catch(e) {}
@@ -747,7 +793,9 @@ function updateToolbarLive() {
   const el = document.getElementById('toolbarLive');
   if (!el) return;
   el.textContent = n + ' geselecteerd';
-  el.className = 'toolbar-live' + (n===0 ? '' : n<8 ? ' under' : n===8 ? ' exact' : ' over');
+  const dg = config.dienstGrootte ?? 8;
+  const dw = config.dienstWaarschuwing !== false;
+  el.className = 'toolbar-live' + (!dw || n===0 ? '' : n<dg ? ' under' : n===dg ? ' exact' : ' over');
 }
 function renderDienst() {
   const roster = document.getElementById('roster');
@@ -765,7 +813,8 @@ function renderDienst() {
   const n = present.size;
   const cc = document.getElementById('dienstCount');
   cc.textContent = n + ' aanwezig';
-  cc.className = 'count' + (n===0 ? '' : n<8 ? ' under' : n===8 ? ' exact' : ' over');
+  const _dg = config.dienstGrootte ?? 8, _dw = config.dienstWaarschuwing !== false;
+  cc.className = 'count' + (!_dw || n===0 ? '' : n<_dg ? ' under' : n===_dg ? ' exact' : ' over');
   updateToolbarLive();
 }
 function renderRang() {
@@ -784,22 +833,35 @@ function renderRang() {
       <div class="meta">Beurtteller ${next.counter} · ${next.cooked}× gekookt · ${next.diensten} diensten gedraaid</div>`;
   }
   document.getElementById('emptystate').style.display = people.length ? 'none' : 'block';
+  const showScore = config.beoordelingActief !== false;
+  const thScore = document.getElementById('thScore');
+  if (thScore) thScore.style.display = showScore ? '' : 'none';
+  const avgScore = (pid) => {
+    if (!showScore) return '';
+    const sc = history.filter(h => h.kokId === pid && h.score != null).map(h => h.score);
+    if (!sc.length) return '<td class="hide-mobile substat" style="color:var(--muted)">—</td>';
+    const avg = (sc.reduce((a,b)=>a+b,0)/sc.length).toFixed(1);
+    const cls = avg<5 ? 's-low' : avg<7 ? 's-mid' : avg<9 ? 's-good' : 's-top';
+    return `<td class="hide-mobile substat"><span class="score-badge ${cls}">${avg}</span></td>`;
+  };
   let rows = regular.map((p, idx) => `
     <tr class="${next && p.id===next.id ? 'next-cook':''}">
       <td class="rank">${idx+1}</td>
       <td class="name-col nm-link" onclick="openPersonDetail('${p.id}')">${esc(p.name)}</td>
       <td><span class="counter">${p.counter}</span></td>
       <td class="hide-mobile substat">${p.cooked}x</td>
+      ${avgScore(p.id)}
       <td class="hide-mobile substat">${p.diensten}</td>
     </tr>`).join('');
   if (bvs.length) {
-    rows += `<tr class="rang-divider"><td colspan="5">Bevelvoerders</td></tr>`;
+    rows += `<tr class="rang-divider"><td colspan="${showScore?6:5}">Bevelvoerders</td></tr>`;
     rows += bvs.map(p => `
     <tr>
       <td class="rank" style="color:var(--muted)">—</td>
       <td class="name-col nm-link" onclick="openPersonDetail('${p.id}')">${esc(p.name)}<span class="role-pill">BV</span></td>
       <td><span class="counter" style="color:var(--muted);font-size:16px">${p.counter}</span></td>
       <td class="hide-mobile substat">${p.cooked}x</td>
+      ${avgScore(p.id)}
       <td class="hide-mobile substat">${p.diensten}</td>
     </tr>`).join('');
   }
@@ -846,10 +908,15 @@ function renderHist() {
       </div>`;
     }
     const editBtn = `<button class="btn ghost hist-undo" onclick="editDienst(${i})" title="Bewerken" style="padding:5px 8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>`;
+    const scoreCls = h.score == null ? '' : h.score < 5 ? 's-low' : h.score < 7 ? 's-mid' : h.score < 9 ? 's-good' : 's-top';
+    const scoreLabel = h.score == null ? '☆' : `⭐ ${h.score}`;
+    const scoreBtn = config.beoordelingActief !== false
+      ? `<button class="btn ghost hist-undo score-btn" onclick="rateEntry(${i})" title="Beoordeling" style="padding:5px 8px;font-size:12px;font-family:'Oswald';letter-spacing:0.5px${h.score!=null?';color:inherit':''}">${h.score != null ? `<span class="score-badge ${scoreCls}" style="pointer-events:none">${scoreLabel}</span>` : scoreLabel}</button>`
+      : '';
     return `<div class="hist-item">
       <div class="top">
         <div class="top-left"><span class="kok">${esc(h.kokNaam)}</span><span class="date">${datum}</span></div>
-        <div class="top-btns">${editBtn}${delBtn}</div>
+        <div class="top-btns">${scoreBtn}${editBtn}${delBtn}</div>
       </div>
       <div class="det">${h.aantal} aanwezig${h.handmatig?' · handmatig gekozen':''}</div>
       <div class="att">${h.aanwezigen.map(esc).join(', ')}</div>
@@ -925,10 +992,11 @@ function startConfirm() {
     : 'Vink iemand op "kookt mee" om een kok te kunnen kiezen';
   const warn = document.getElementById('dienstWarning');
   const n = present.size;
-  if (n !== 8) {
-    warn.textContent = n < 8
-      ? `Minder personen dan gebruikelijk: ${n} geselecteerd (normaal 8).`
-      : `Meer personen dan gebruikelijk: ${n} geselecteerd (normaal 8).`;
+  const _wdg = config.dienstGrootte ?? 8, _wdw = config.dienstWaarschuwing !== false;
+  if (_wdw && n !== _wdg) {
+    warn.textContent = n < _wdg
+      ? `Minder personen dan gebruikelijk: ${n} geselecteerd (normaal ${_wdg}).`
+      : `Meer personen dan gebruikelijk: ${n} geselecteerd (normaal ${_wdg}).`;
     warn.style.display = 'block';
   } else { warn.style.display = 'none'; }
   // pick list = alle aanwezigen die koken
@@ -1175,6 +1243,12 @@ function doOpenManage() {
   // Pre-vul kazerne naam
   const ki = document.getElementById('kazerneNaamInput');
   if (ki) ki.value = config.kazerneNaam || '';
+  const dgi = document.getElementById('dienstGrootteInput');
+  if (dgi) dgi.value = config.dienstGrootte ?? 8;
+  const wt = document.getElementById('waarschuwingToggle');
+  if (wt) wt.checked = config.dienstWaarschuwing !== false;
+  const bt = document.getElementById('beoordelingToggle');
+  if (bt) bt.checked = config.beoordelingActief === true;
   document.getElementById('manageBody').innerHTML = people.map(p => `
     <div class="edit-row" data-id="${p.id}">
       <div class="edit-row-main">
@@ -1300,6 +1374,48 @@ function updateHeader() {
   const naam = config.kazerneNaam || 'Priklijst';
   document.getElementById('headerTitle').textContent = 'Priklijst ' + naam + '.';
 }
+function saveDienstGrootte() {
+  const val = parseInt(document.getElementById('dienstGrootteInput').value);
+  if (!val || val < 1) { toast('Vul een geldig getal in'); return; }
+  config.dienstGrootte = val;
+  addAuditEntry('instellingen_gewijzigd', `Verwacht dienstgrootte: ${val}`);
+  saveConfig(); render(); toast('Opgeslagen');
+}
+function toggleDienstWaarschuwing() {
+  config.dienstWaarschuwing = document.getElementById('waarschuwingToggle').checked;
+  addAuditEntry('instellingen_gewijzigd', `Waarschuwingen: ${config.dienstWaarschuwing ? 'aan' : 'uit'}`);
+  saveConfig(); render();
+}
+function toggleBeoordeling() {
+  config.beoordelingActief = document.getElementById('beoordelingToggle').checked;
+  addAuditEntry('instellingen_gewijzigd', `Maaltijdbeoordeling: ${config.beoordelingActief ? 'aan' : 'uit'}`);
+  saveConfig(); render();
+}
+let _rateIndex = null;
+function rateEntry(index) {
+  _rateIndex = index;
+  const h = history[index];
+  document.getElementById('scoreKokNaam').textContent = h.kokNaam || '';
+  const picker = document.getElementById('scorePicker');
+  picker.innerHTML = Array.from({length:11},(_,n) => {
+    const cls = n < 5 ? 's-low' : n < 7 ? 's-mid' : n < 9 ? 's-good' : 's-top';
+    const sel = h.score === n ? ' sel' : '';
+    return `<button class="score-pick-btn${sel}" onclick="saveScore(${n})" style="${n===10?'grid-column:span 2':''}">${n}</button>`;
+  }).join('');
+  document.getElementById('scoreOverlay').classList.add('show');
+}
+function saveScore(score) {
+  if (_rateIndex === null) return;
+  history[_rateIndex].score = score;
+  addAuditEntry('dienst_bewerkt', `Score ${score != null ? score : 'gewist'} voor ${history[_rateIndex].kokNaam} (${history[_rateIndex].dienstDate || ''})`);
+  save(); render();
+  document.getElementById('scoreOverlay').classList.remove('show');
+  _rateIndex = null;
+}
+function closeScore() {
+  document.getElementById('scoreOverlay').classList.remove('show');
+  _rateIndex = null;
+}
 function saveKazerneNaam() {
   const val = document.getElementById('kazerneNaamInput').value.trim();
   if (!val) { toast('Vul een naam in'); return; }
@@ -1416,7 +1532,7 @@ document.getElementById('pinInput').addEventListener('keydown',e=>{if(e.key==='E
 ['statsEditCounter','statsEditCooked','statsEditDiensten'].forEach(id=>{
   document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')saveStatsEdit();});
 });
-['confirmOverlay','addOverlay','manageOverlay','statsEditOverlay','personOverlay','editDienstOverlay','logOverlay'].forEach(id=>{
+['confirmOverlay','addOverlay','manageOverlay','statsEditOverlay','personOverlay','editDienstOverlay','logOverlay','scoreOverlay'].forEach(id=>{
   const o=document.getElementById(id);
   o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('show');});
 });
