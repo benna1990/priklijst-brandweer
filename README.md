@@ -31,11 +31,9 @@ Een lichtgewicht, installeerbare webapp (PWA) voor het bijhouden van het kookroo
 
 ### 1. Fork of kopieer deze repository
 
-```bash
-# Maak een nieuwe GitHub-repo aan en push de index.html
-git clone https://github.com/jouw-org/priklijst-jouw-kazerne.git
-cp index.html /pad/naar/jouw-repo/
-```
+**Optie A (makkelijkst):** Klik op **Fork** rechtsboven op deze GitHub-pagina. Je krijgt een eigen kopie onder je eigen account.
+
+**Optie B:** Download `index.html` uit deze repo, maak een nieuwe repo aan via [github.com/new](https://github.com/new) en upload het bestand daar.
 
 ### 2. Maak een Supabase-project aan
 

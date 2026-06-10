@@ -77,6 +77,7 @@
   .log-badge.pin_gewijzigd     { background:#f0f0f0; color:#555; border:1px solid #ccc; }
   .log-badge.backup_hersteld       { background:#fff3e0; color:#b36a00; border:1px solid #f0c880; }
   .log-badge.instellingen_gewijzigd{ background:#f0f0f0; color:#555; border:1px solid #ccc; }
+  .log-badge.sync_waarschuwing     { background:#fdeaea; color:var(--red); border:1px solid #f0b8b8; font-weight:700; }
   .hist-item .kok-alt { font-family:'Oswald',sans-serif; font-size:16px; font-weight:600; }
   table { width: 100%; border-collapse: collapse; }
   thead th { background: var(--steel); color: #fff; font-family: 'Oswald', sans-serif; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; font-size: 12px; padding: 11px 8px; text-align: center; white-space: nowrap; }
@@ -852,6 +853,7 @@ function renderLog() {
     pin_gewijzigd:          'PIN gewijzigd',
     backup_hersteld:        'Backup hersteld',
     instellingen_gewijzigd: 'Instellingen',
+    sync_waarschuwing:      '⚠️ Sync waarschuwing',
   };
   list.innerHTML = auditLog.map(e => {
     const d = new Date(e.ts);
@@ -1411,6 +1413,9 @@ render();
 (async () => {
   const rows = await loadFromCloud();
   let changed = false;
+  // Sla lokale aantallen op vóór cloud-overwrite — voor dataverlies-detectie
+  const histVoor = history.length;
+  const peopleVoor = people.length;
   for (const row of rows) {
     if (row.id === 'main' && Array.isArray(row.people)) {
       people = row.people;
@@ -1426,6 +1431,17 @@ render();
       auditLog = row.history;
       changed = true;
     }
+  }
+  // Detecteer dataverlies: als cloud minder entries heeft dan lokaal was
+  if (histVoor > 0 && history.length < histVoor) {
+    addAuditEntry('sync_waarschuwing',
+      `Cloud sync laadde ${history.length} history-vermeldingen, lokaal waren er ${histVoor} — mogelijk dataverlies!`);
+    changed = true;
+  }
+  if (peopleVoor > 0 && people.length < peopleVoor) {
+    addAuditEntry('sync_waarschuwing',
+      `Cloud sync laadde ${people.length} personen, lokaal waren er ${peopleVoor} — mogelijk dataverlies!`);
+    changed = true;
   }
   if (changed) {
     try { localStorage.setItem(STORE_KEY, JSON.stringify({people, history, auditLog, config})); } catch(e) {}
