@@ -206,6 +206,19 @@
     <button onclick="openHelp()" aria-label="Uitleg" style="flex-shrink:0;background:none;border:2px solid rgba(255,255,255,0.4);color:#fff;border-radius:50%;width:36px;height:36px;font-size:18px;font-weight:700;cursor:pointer;line-height:1">?</button>
   </div>
 </header>
+<!-- TOEGANGSPOORT — éénmalig per apparaat -->
+<div id="accessOverlay" style="position:fixed;inset:0;background:var(--steel);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;gap:20px">
+  <div style="font-size:56px;line-height:1">🔥</div>
+  <div id="accessTitle" style="font-family:'Oswald',sans-serif;font-weight:700;font-size:26px;letter-spacing:2px;text-transform:uppercase;color:#f4f1ea;text-align:center">Priklijst</div>
+  <div style="color:#b9bcc2;font-size:14px;text-align:center;max-width:280px">Voer de PIN in om toegang te krijgen</div>
+  <div style="width:100%;max-width:280px;display:flex;flex-direction:column;gap:10px">
+    <input id="accessPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="PIN" autocomplete="off"
+      style="width:100%;padding:14px;border:2px solid rgba(255,255,255,0.2);border-radius:10px;background:rgba(255,255,255,0.08);color:#f4f1ea;font-size:22px;font-family:'Oswald',sans-serif;letter-spacing:6px;text-align:center;outline:none"
+      onkeydown="if(event.key==='Enter')submitAccess()">
+    <div id="accessError" style="color:#f08080;font-size:13px;text-align:center;display:none">Verkeerde PIN, probeer opnieuw</div>
+    <button onclick="submitAccess()" style="width:100%;padding:14px;background:var(--red);border:none;border-radius:10px;color:#fff;font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer">Toegang</button>
+  </div>
+</div>
 <div class="wrap">
   <div class="tabs">
     <button class="tab active" id="tabDienst" onclick="setMode(&#39;dienst&#39;)">Dienst</button>
@@ -1377,6 +1390,8 @@ function closePinOverlay() {
 function updateHeader() {
   const naam = config.kazerneNaam || 'Priklijst';
   document.getElementById('headerTitle').textContent = 'Priklijst ' + naam + '.';
+  const at = document.getElementById('accessTitle');
+  if (at) at.textContent = 'Priklijst ' + naam + '.';
 }
 function saveDienstGrootte() {
   const val = parseInt(document.getElementById('dienstGrootteInput').value);
@@ -1545,6 +1560,26 @@ document.getElementById('pinInput').addEventListener('keydown',e=>{if(e.key==='E
 });
 document.getElementById('pinOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('pinOverlay'))closePinOverlay();});
 document.getElementById('helpOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('helpOverlay'))closeHelp();});
+// Toegangspoort — éénmalig per apparaat
+const _authed = localStorage.getItem('priklijst_toegang') === '1';
+if (_authed) {
+  document.getElementById('accessOverlay').style.display = 'none';
+} else {
+  document.getElementById('accessPinInput').focus();
+}
+function submitAccess() {
+  const val = document.getElementById('accessPinInput').value;
+  const stored = config.pin || '1234';
+  if (val === stored) {
+    localStorage.setItem('priklijst_toegang', '1');
+    document.getElementById('accessOverlay').style.display = 'none';
+    render();
+  } else {
+    document.getElementById('accessError').style.display = 'block';
+    document.getElementById('accessPinInput').value = '';
+    document.getElementById('accessPinInput').focus();
+  }
+}
 updateHeader();
 render();
 (async () => {
