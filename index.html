@@ -210,8 +210,8 @@
 <div id="accessOverlay" style="position:fixed;inset:0;background:var(--steel);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;gap:20px">
   <div style="font-size:56px;line-height:1">🔥</div>
   <div id="accessTitle" style="font-family:'Oswald',sans-serif;font-weight:700;font-size:26px;letter-spacing:2px;text-transform:uppercase;color:#f4f1ea;text-align:center">Priklijst</div>
-  <div style="color:#b9bcc2;font-size:14px;text-align:center;max-width:280px">Voer de PIN in om toegang te krijgen</div>
-  <div id="accessHint" style="display:none;background:rgba(255,255,255,0.08);border-radius:8px;padding:8px 16px;color:#f4f1ea;font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:1px;text-transform:uppercase;text-align:center"></div>
+  <div style="color:#b9bcc2;font-size:14px;text-align:center;max-width:280px">Voer de PIN in — dit hoeft maar <b style="color:#f4f1ea">één keer</b> per apparaat</div>
+  <div id="accessHint" style="display:none;background:rgba(255,255,255,0.08);border-radius:8px;padding:10px 18px;color:#f4f1ea;font-family:'Barlow',sans-serif;font-size:14px;text-align:center;line-height:1.4;max-width:280px"></div>
   <div style="width:100%;max-width:280px;display:flex;flex-direction:column;gap:10px">
     <input id="accessPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="PIN" autocomplete="off"
       style="width:100%;padding:14px;border:2px solid rgba(255,255,255,0.2);border-radius:10px;background:rgba(255,255,255,0.08);color:#f4f1ea;font-size:22px;font-family:'Oswald',sans-serif;letter-spacing:6px;text-align:center;outline:none"
@@ -1412,7 +1412,7 @@ function updateHeader() {
   if (ah) {
     const hint = config.toegangsHint || '';
     ah.style.display = hint ? '' : 'none';
-    ah.textContent = '🚒 ' + hint;
+    ah.innerHTML = '<span style="opacity:0.6;font-size:12px">Hint</span><br>' + esc(hint);
   }
 }
 function saveToegangspin() {
