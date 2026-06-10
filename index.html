@@ -763,6 +763,11 @@ function renderRang() {
 function renderHist() {
   const list = document.getElementById('histList');
   document.getElementById('histEmpty').style.display = history.length ? 'none' : 'block';
+  history.sort((a, b) => {
+    const ta = a.dienstDate ? new Date(a.dienstDate+'T12:00:00').getTime() : a.ts;
+    const tb = b.dienstDate ? new Date(b.dienstDate+'T12:00:00').getTime() : b.ts;
+    return tb - ta;
+  });
   list.innerHTML = history.map((h, i) => {
     const d = h.dienstDate ? new Date(h.dienstDate + 'T12:00:00') : new Date(h.ts);
     const datum = d.toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
