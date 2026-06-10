@@ -121,7 +121,7 @@ ON CONFLICT (id) DO NOTHING;
 2. Vul de nieuwe PIN in (minimaal 4 cijfers)
 3. Tik **Opslaan**
 
-> De PIN wordt lokaal opgeslagen per apparaat. Stel hem in op elk apparaat dat de app gebruikt.
+> De PIN wordt opgeslagen in Supabase en is direct geldig op alle apparaten.
 
 ---
 
@@ -172,7 +172,3 @@ Gewoon `index.html` openen in een browser werkt. Voor de Supabase-sync heb je ee
 ## Licentie
 
 MIT — vrij te gebruiken, aanpassen en verspreiden. Vermeld de oorsprong als je wil.
-
----
-
-*Gebouwd voor Brandweer Victor Noord-Holland. Vragen of bijdragen? Open een issue.*
