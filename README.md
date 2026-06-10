@@ -7,9 +7,9 @@ Een lichtgewicht, installeerbare webapp (PWA) voor het bijhouden van het kookroo
 ## Wat doet het?
 
 - **Dienst-tab** — selecteer wie er in dienst is, de app bepaalt wie aan de beurt is om te koken
-- **Ranglijst** — overzicht van alle collega's gesorteerd op beurtteller
-- **Historie** — overzicht van alle verwerkte diensten, bewerkbaar
-- **Wijzigingslog** — automatisch bijgehouden log van alle aanpassingen (transparantie)
+- **Ranglijst** — overzicht van alle collega's gesorteerd op beurtteller; toont gemiddelde maaltijdscore per kok als die feature aan staat
+- **Historie** — overzicht van alle verwerkte diensten, bewerkbaar; beoordeel maaltijden met een cijfer 0–10
+- **Wijzigingslog** — automatisch bijgehouden log van alle aanpassingen, zichtbaar via de LOG-knop in de History-footer
 - **Beveiliging** — PIN-beveiliging voor bewerken en verwijderen
 - **Sync** — alle data staat in Supabase, altijd actueel op alle apparaten
 - **Offline-capable** — werkt ook zonder internet via serviceworker
@@ -130,6 +130,33 @@ ON CONFLICT (id) DO NOTHING;
 
 > **Tip:** Stel de begintellers in op basis van historische data, zodat niemand met een achterstand begint.
 > De PIN en kazerne naam worden opgeslagen in Supabase en zijn direct geldig op alle apparaten.
+
+---
+
+## Instellingen (⚙️)
+
+Alle instellingen zijn bereikbaar via het tandwiel-icoontje rechtsonder. Ze worden opgeslagen in Supabase en zijn direct actief op alle apparaten.
+
+| Instelling | Uitleg |
+|---|---|
+| **Kazerne naam** | Verschijnt in de header van de app |
+| **Kleur- en tekstwaarschuwingen** | Aan/uit — toont of de dienst-bezetting afwijkt van het bezettingsaantal |
+| **Bezettingsaantal** | Het verwachte aantal personen per dienst (standaard 8). Bepaalt wanneer de kleurwaarschuwing rood/groen/geel kleurt |
+| **Maaltijdbeoordeling (0–10)** | Aan/uit — voeg een cijfer toe aan elke gekookte maaltijd. Zichtbaar in Historie en als gemiddelde in de Ranglijst |
+| **PIN wijzigen** | Minimaal 4 cijfers. Vereist voor bewerken, verwijderen en beheer |
+
+---
+
+## Maaltijdbeoordeling
+
+Als de maaltijdbeoordeling aanstaat, verschijnt er een **☆-knop** rechts in elke history-entry.
+
+1. Tik op **☆** bij een dienst
+2. Kies een cijfer van **0 tot 10**
+3. De score verschijnt als gekleurde badge (rood, amber, groen of goud)
+4. In de **Ranglijst** zie je het gemiddelde per kok in de Score-kolom
+
+Score wissen doe je via de "Score wissen"-knop onderaan de picker.
 
 ---
 

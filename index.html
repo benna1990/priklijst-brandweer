@@ -20,7 +20,7 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Barlow', sans-serif; background: var(--paper);
     background-image: repeating-linear-gradient(0deg, transparent, transparent 31px, var(--paper-line) 31px, var(--paper-line) 32px);
-    color: var(--ink); min-height: 100vh; padding: 0 0 90px; }
+    color: var(--ink); min-height: 100vh; padding: 0 0 106px; }
   header { background: linear-gradient(180deg, var(--steel-light), var(--steel)); color: var(--paper);
     padding: calc(env(safe-area-inset-top, 0px) + 22px) 20px 18px; border-bottom: 5px solid var(--red); position: sticky; top: 0; z-index: 50; box-shadow: 0 4px 14px rgba(0,0,0,0.25); }
   header h1 { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 28px; letter-spacing: 2px; text-transform: uppercase; display: flex; align-items: center; gap: 12px; }
@@ -86,7 +86,7 @@
   .score-badge.s-mid  { background:#fdf5e0; color:#8a6c00; border:1px solid #f0d98a; }
   .score-badge.s-good { background:#eef6f1; color:var(--green); border:1px solid #b9dfc8; }
   .score-badge.s-top  { background:#fff8e0; color:#8a6c00; border:1px solid var(--gold); }
-  .score-pick-btn { font-family:'Oswald',sans-serif; font-size:18px; font-weight:700; padding:12px 0; border:2px solid var(--paper-line); border-radius:8px; background:#fff; cursor:pointer; width:100%; transition:all 0.1s; }
+  .score-pick-btn { font-family:'Oswald',sans-serif; font-size:15px; font-weight:700; padding:8px 0; border:2px solid var(--paper-line); border-radius:8px; background:#fff; cursor:pointer; width:100%; transition:all 0.1s; }
   .score-pick-btn:active, .score-pick-btn.sel { border-color:var(--red); color:var(--red); background:#fdeaea; }
   .setting-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--paper-line); }
   .setting-row:last-child { border-bottom:none; }
@@ -112,7 +112,7 @@
   .role-pill { font-size:10px; font-family:'Oswald'; text-transform:uppercase; letter-spacing:0.5px; background:var(--red); color:#fff; padding:2px 6px; border-radius:10px; margin-left:6px; vertical-align:middle; }
   .mini { background: none; border: none; cursor: pointer; font-size: 14px; color: var(--muted); padding: 4px; border-radius: 4px; }
   .mini:hover { background: var(--paper); color: var(--ink); }
-  .toolbar { position: fixed; bottom: 0; left: 0; right: 0; display: flex; flex-wrap: nowrap; gap: 8px; align-items: center; background: rgba(244,241,234,0.97); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border-top: 2px solid var(--paper-line); padding: 10px 16px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 40; box-shadow: 0 -4px 14px rgba(0,0,0,0.1); }
+  .toolbar { position: fixed; bottom: 0; left: 0; right: 0; display: flex; flex-wrap: nowrap; gap: 8px; align-items: center; background: rgba(244,241,234,0.97); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border-top: 2px solid var(--paper-line); padding: 10px 16px; padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40; box-shadow: 0 -4px 14px rgba(0,0,0,0.1); }
   .btn { font-family: 'Oswald', sans-serif; letter-spacing: 0.5px; text-transform: uppercase; font-size: 13px; padding: 10px 14px; border-radius: 6px; border: 2px solid var(--steel); background: #fff; color: var(--steel); cursor: pointer; transition: background 0.15s, color 0.15s; text-align:center; }
   .btn:hover { background: var(--steel); color: #fff; }
   .btn.primary { background: var(--steel); color: #fff; }
@@ -515,7 +515,7 @@
         <label class="toggle-switch"><input type="checkbox" id="waarschuwingToggle" onchange="toggleDienstWaarschuwing()"><span class="toggle-track"></span></label>
       </div>
       <div class="setting-row" style="gap:10px">
-        <label for="dienstGrootteInput" style="flex:1">Verwacht aantal in dienst</label>
+        <label for="dienstGrootteInput" style="flex:1">Bezettingsaantal</label>
         <input id="dienstGrootteInput" type="number" min="1" max="99" style="width:56px;padding:6px 8px;border:1.5px solid var(--paper-line);border-radius:5px;font-family:'Barlow';font-size:14px;text-align:center">
         <button class="btn ghost" style="padding:6px 12px" onclick="saveDienstGrootte()">OK</button>
       </div>
@@ -833,7 +833,7 @@ function renderRang() {
       <div class="meta">Beurtteller ${next.counter} · ${next.cooked}× gekookt · ${next.diensten} diensten gedraaid</div>`;
   }
   document.getElementById('emptystate').style.display = people.length ? 'none' : 'block';
-  const showScore = config.beoordelingActief !== false;
+  const showScore = config.beoordelingActief === true;
   const thScore = document.getElementById('thScore');
   if (thScore) thScore.style.display = showScore ? '' : 'none';
   const avgScore = (pid) => {
@@ -910,7 +910,7 @@ function renderHist() {
     const editBtn = `<button class="btn ghost hist-undo" onclick="editDienst(${i})" title="Bewerken" style="padding:5px 8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>`;
     const scoreCls = h.score == null ? '' : h.score < 5 ? 's-low' : h.score < 7 ? 's-mid' : h.score < 9 ? 's-good' : 's-top';
     const scoreLabel = h.score == null ? '☆' : `⭐ ${h.score}`;
-    const scoreBtn = config.beoordelingActief !== false
+    const scoreBtn = config.beoordelingActief === true
       ? `<button class="btn ghost hist-undo score-btn" onclick="rateEntry(${i})" title="Beoordeling" style="padding:5px 8px;font-size:12px;font-family:'Oswald';letter-spacing:0.5px${h.score!=null?';color:inherit':''}">${h.score != null ? `<span class="score-badge ${scoreCls}" style="pointer-events:none">${scoreLabel}</span>` : scoreLabel}</button>`
       : '';
     return `<div class="hist-item">
