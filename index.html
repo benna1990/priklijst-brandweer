@@ -75,7 +75,8 @@
   .log-badge.tellers_aangepast { background:#eef4fb; color:var(--blue); border:1px solid #b8d4f0; }
   .log-badge.collega_toegevoegd{ background:#eef6f1; color:var(--green); border:1px solid #b9dfc8; }
   .log-badge.pin_gewijzigd     { background:#f0f0f0; color:#555; border:1px solid #ccc; }
-  .log-badge.backup_hersteld   { background:#fff3e0; color:#b36a00; border:1px solid #f0c880; }
+  .log-badge.backup_hersteld       { background:#fff3e0; color:#b36a00; border:1px solid #f0c880; }
+  .log-badge.instellingen_gewijzigd{ background:#f0f0f0; color:#555; border:1px solid #ccc; }
   .hist-item .kok-alt { font-family:'Oswald',sans-serif; font-size:16px; font-weight:600; }
   table { width: 100%; border-collapse: collapse; }
   thead th { background: var(--steel); color: #fff; font-family: 'Oswald', sans-serif; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; font-size: 12px; padding: 11px 8px; text-align: center; white-space: nowrap; }
@@ -177,7 +178,7 @@
 <header>
   <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
     <div>
-      <h1>Priklijst Victor.</h1>
+      <h1 id="headerTitle">Priklijst.</h1>
       <p style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:5px"><span class="badge">WIE KOOKT?</span><span style="color:#b9bcc2;font-size:13px;letter-spacing:0.5px">Wie het meest aanwezig is kookt!</span></p>
     </div>
     <button onclick="openHelp()" aria-label="Uitleg" style="flex-shrink:0;background:none;border:2px solid rgba(255,255,255,0.4);color:#fff;border-radius:50%;width:36px;height:36px;font-size:18px;font-weight:700;cursor:pointer;line-height:1">?</button>
@@ -480,8 +481,15 @@
   <div class="modal">
     <div class="modal-head">Lijst beheren <button class="x" onclick="closeManage()">×</button></div>
     <div class="modal-body" id="manageBody"></div>
-    <div style="padding:12px 20px;border-top:1px solid var(--paper-line)">
-      <div class="pick-label" style="margin:0 0 8px">Auto-backups</div>
+    <div style="padding:12px 20px 0;border-top:1px solid var(--paper-line)">
+      <div class="pick-label" style="margin:0 0 6px">Kazerne naam</div>
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <input id="kazerneNaamInput" type="text" maxlength="40" placeholder="bijv. Victor" style="flex:1;padding:8px 10px;border:1.5px solid var(--paper-line);border-radius:5px;font-family:'Barlow';font-size:14px">
+        <button class="btn ghost" onclick="saveKazerneNaam()">Opslaan</button>
+      </div>
+    </div>
+    <div style="padding:0 20px;border-top:1px solid var(--paper-line)">
+      <div class="pick-label" style="margin:12px 0 8px">Auto-backups</div>
       <div id="backupList"></div>
     </div>
     <div style="padding:0 20px 16px;border-top:1px solid var(--paper-line);margin-top:12px">
@@ -623,6 +631,8 @@ let state = load();
 let people = state.people;
 let history = state.history;
 let auditLog = state.auditLog;
+// config: kazerne naam + PIN — gesynchroniseerd via Supabase rij id='config'
+let config = state.config;
 let present = new Set();
 let cooksThisShift = {};
 let selectedKokId = null;
@@ -630,38 +640,51 @@ let selectedKokId = null;
 function load() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
-    if (raw) { const d = JSON.parse(raw); return { people: d.people||[], history: d.history||[], auditLog: d.auditLog||[] }; }
+    if (raw) {
+      const d = JSON.parse(raw);
+      return { people: d.people||[], history: d.history||[], auditLog: d.auditLog||[], config: d.config||{kazerneNaam:'Priklijst',pin:'1234'} };
+    }
   } catch(e) {}
-  // Geen lokale data → app wacht op Supabase-sync
-  return { people: [], history: [], auditLog: [] };
+  return { people: [], history: [], auditLog: [], config: {kazerneNaam:'Priklijst', pin:'1234'} };
 }
 function save() {
-  try { localStorage.setItem(STORE_KEY, JSON.stringify({people, history, auditLog})); } catch(e) {}
+  try { localStorage.setItem(STORE_KEY, JSON.stringify({people, history, auditLog, config})); } catch(e) {}
   clearTimeout(save._t);
   save._t = setTimeout(saveToCloud, 800);
 }
+function saveConfig() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify({people, history, auditLog, config})); } catch(e) {}
+  clearTimeout(saveConfig._t);
+  saveConfig._t = setTimeout(saveConfigToCloud, 800);
+}
+
+// Supabase: drie rijen in dezelfde tabel (geen schema-wijziging nodig)
+// id='main'   → people + history
+// id='config' → config opgeslagen in 'people' kolom als object
+// id='audit'  → auditLog opgeslagen in 'history' kolom als array
+const _supa = (body) => fetch(SUPABASE_URL+'/rest/v1/priklijst_state', {
+  method: 'POST',
+  headers: {'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+  body: JSON.stringify(body)
+}).catch(()=>{});
+
 async function loadFromCloud() {
   try {
-    const res = await fetch(SUPABASE_URL+'/rest/v1/priklijst_state?id=eq.main&select=people,history', {
+    const res = await fetch(SUPABASE_URL+'/rest/v1/priklijst_state?id=in.(main,config,audit)&select=id,people,history', {
       headers: {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer '+SUPABASE_KEY}
     });
     const rows = await res.json();
-    return rows[0] || null;
-  } catch(e) { return null; }
+    return Array.isArray(rows) ? rows : [];
+  } catch(e) { return []; }
 }
 async function saveToCloud() {
-  try {
-    await fetch(SUPABASE_URL+'/rest/v1/priklijst_state', {
-      method: 'POST',
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': 'Bearer '+SUPABASE_KEY,
-        'Content-Type': 'application/json',
-        'Prefer': 'resolution=merge-duplicates'
-      },
-      body: JSON.stringify({id:'main', people, history, updated_at: new Date().toISOString()})
-    });
-  } catch(e) {}
+  await _supa({id:'main', people, history, updated_at: new Date().toISOString()});
+}
+async function saveConfigToCloud() {
+  await _supa({id:'config', people: config, history: [], updated_at: new Date().toISOString()});
+}
+async function saveAuditToCloud() {
+  await _supa({id:'audit', people: [], history: auditLog, updated_at: new Date().toISOString()});
 }
 
 function sortForCook(arr) {
@@ -822,8 +845,9 @@ function renderLog() {
     history_verwijderd: 'Log verwijderd',
     tellers_aangepast:  'Tellers aangepast',
     collega_toegevoegd: 'Collega toegevoegd',
-    pin_gewijzigd:      'PIN gewijzigd',
-    backup_hersteld:    'Backup hersteld',
+    pin_gewijzigd:          'PIN gewijzigd',
+    backup_hersteld:        'Backup hersteld',
+    instellingen_gewijzigd: 'Instellingen',
   };
   list.innerHTML = auditLog.map(e => {
     const d = new Date(e.ts);
@@ -847,6 +871,8 @@ function toggleLog() {
 function addAuditEntry(type, tekst) {
   auditLog.unshift({ ts: Date.now(), type, tekst });
   if (auditLog.length > 300) auditLog.splice(300);
+  clearTimeout(addAuditEntry._t);
+  addAuditEntry._t = setTimeout(saveAuditToCloud, 800);
 }
 function togglePresent(id) {
   const p = people.find(x=>x.id===id);
@@ -1126,6 +1152,9 @@ function saveAdd() {
 }
 function openManage() { requirePin(doOpenManage); }
 function doOpenManage() {
+  // Pre-vul kazerne naam
+  const ki = document.getElementById('kazerneNaamInput');
+  if (ki) ki.value = config.kazerneNaam || '';
   document.getElementById('manageBody').innerHTML = people.map(p => `
     <div class="edit-row" data-id="${p.id}">
       <div class="edit-row-main">
@@ -1219,7 +1248,7 @@ function resetAll() {
 }
 function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 let toastT;
-function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2400); }
+function toast(msg, dur){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'), dur||2400); }
 // --- PIN ---
 let pinCallback = null;
 function requirePin(cb) {
@@ -1230,11 +1259,13 @@ function requirePin(cb) {
   document.getElementById('pinInput').focus();
 }
 function submitPin() {
-  const stored = localStorage.getItem(STORE_KEY+'_pin') || '1234';
+  const stored = config.pin || '1234';
   if (document.getElementById('pinInput').value === stored) {
     document.getElementById('pinOverlay').classList.remove('show');
     const cb = pinCallback; pinCallback = null;
     if (cb) cb();
+    // Waarschuw als nog standaard-PIN in gebruik
+    if (stored === '1234') setTimeout(() => toast('⚠️ Je gebruikt nog de standaard-PIN (1234). Wijzig hem via ⚙️ → PIN wijzigen!', 4000), 300);
   } else {
     document.getElementById('pinError').style.display = 'block';
     document.getElementById('pinInput').value = '';
@@ -1245,13 +1276,27 @@ function closePinOverlay() {
   document.getElementById('pinOverlay').classList.remove('show');
   pinCallback = null;
 }
+function updateHeader() {
+  const naam = config.kazerneNaam || 'Priklijst';
+  document.getElementById('headerTitle').textContent = 'Priklijst ' + naam + '.';
+}
+function saveKazerneNaam() {
+  const val = document.getElementById('kazerneNaamInput').value.trim();
+  if (!val) { toast('Vul een naam in'); return; }
+  const oud = config.kazerneNaam;
+  config.kazerneNaam = val;
+  updateHeader();
+  addAuditEntry('instellingen_gewijzigd', `Kazerne naam: "${oud}" → "${val}"`);
+  saveConfig();
+  toast('Naam opgeslagen');
+}
 function changePin() {
   const val = document.getElementById('newPinInput').value.trim();
   if (!val || val.length < 4) { toast('PIN moet minimaal 4 cijfers zijn'); return; }
-  localStorage.setItem(STORE_KEY+'_pin', val);
+  config.pin = val;
   document.getElementById('newPinInput').value = '';
   addAuditEntry('pin_gewijzigd', 'PIN gewijzigd');
-  save();
+  saveConfig();
   toast('PIN opgeslagen');
 }
 // --- AUTO-BACKUP ---
@@ -1357,14 +1402,29 @@ document.getElementById('pinInput').addEventListener('keydown',e=>{if(e.key==='E
 });
 document.getElementById('pinOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('pinOverlay'))closePinOverlay();});
 document.getElementById('helpOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('helpOverlay'))closeHelp();});
+updateHeader();
 render();
 (async () => {
-  const cloud = await loadFromCloud();
-  if (cloud && Array.isArray(cloud.people)) {
-    people = cloud.people;
-    history = cloud.history || [];
-    // auditLog blijft device-lokaal — niet overschreven door cloud sync
-    try { localStorage.setItem(STORE_KEY, JSON.stringify({people, history, auditLog})); } catch(e) {}
+  const rows = await loadFromCloud();
+  let changed = false;
+  for (const row of rows) {
+    if (row.id === 'main' && Array.isArray(row.people)) {
+      people = row.people;
+      history = row.history || [];
+      changed = true;
+    }
+    if (row.id === 'config' && row.people && typeof row.people === 'object' && !Array.isArray(row.people)) {
+      config = { kazerneNaam: 'Priklijst', pin: '1234', ...row.people };
+      updateHeader();
+      changed = true;
+    }
+    if (row.id === 'audit' && Array.isArray(row.history)) {
+      auditLog = row.history;
+      changed = true;
+    }
+  }
+  if (changed) {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify({people, history, auditLog, config})); } catch(e) {}
     render();
   }
 })();

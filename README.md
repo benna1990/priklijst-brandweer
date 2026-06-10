@@ -68,29 +68,50 @@ CREATE POLICY "public write" ON priklijst_state FOR ALL USING (true);
 
 ### 3. Configureer de app
 
-Open `index.html` en pas deze twee regels aan:
+Open `index.html` en pas deze twee regels aan (bovenin het `<script>`-blok):
 
 ```javascript
 const SUPABASE_URL = 'https://JOUW-PROJECT-ID.supabase.co';
 const SUPABASE_KEY = 'JOUW-ANON-KEY';
 ```
 
-### 4. Zet GitHub Pages aan
+### 4. Maak de config-rij aan in Supabase
+
+Voer dit eenmalig uit in de **SQL Editor** van je Supabase project:
+
+```sql
+-- Config: kazerne naam en PIN
+INSERT INTO priklijst_state (id, people, history)
+VALUES ('config', '{"kazerneNaam":"Jouw Kazerne","pin":"1234"}', '[]')
+ON CONFLICT (id) DO UPDATE SET people = EXCLUDED.people;
+
+-- Audit log rij
+INSERT INTO priklijst_state (id, people, history)
+VALUES ('audit', '[]', '[]')
+ON CONFLICT (id) DO NOTHING;
+```
+
+> Vervang `"Jouw Kazerne"` door de naam van je kazerne. Deze verschijnt in de header van de app.
+
+### 5. Zet GitHub Pages aan
 
 1. Push `index.html` naar je repository als `index.html` in de `main`-branch
 2. Ga naar **Settings → Pages**
 3. Kies als source: `Deploy from a branch → main → / (root)`
 4. Na ~1 minuut is de app live op `https://jouw-org.github.io/priklijst-jouw-kazerne`
 
-### 5. Voeg collega's toe
+### 6. Eerste keer opstarten
 
-1. Open de app
+1. Open de app op je telefoon
 2. Tik op ⚙️ rechtsonder
-3. Voer de PIN in (standaard: `1234` — **wijzig dit meteen**)
-4. Tik **+ Persoon toevoegen**
-5. Herhaal voor alle collega's
+3. Voer de standaard-PIN in: **`1234`**
+4. De app waarschuwt automatisch dat je de PIN moet wijzigen
+5. Scroll naar **PIN wijzigen** → voer een nieuwe PIN in → **Opslaan**
+6. Scroll naar **Kazerne naam** → vul je kazernenaam in → **Opslaan**
+7. Tik **+ Persoon toevoegen** en voeg alle collega's toe
 
 > **Tip:** Stel de begintellers in op basis van historische data, zodat niemand met een achterstand begint.
+> De PIN en kazerne naam worden opgeslagen in Supabase en zijn direct geldig op alle apparaten.
 
 ---
 
