@@ -20,7 +20,7 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Barlow', sans-serif; background: var(--paper);
     background-image: repeating-linear-gradient(0deg, transparent, transparent 31px, var(--paper-line) 31px, var(--paper-line) 32px);
-    color: var(--ink); min-height: 100vh; padding: 0 0 106px; }
+    color: var(--ink); min-height: 100vh; padding: 0 0 80px; }
   header { background: linear-gradient(180deg, var(--steel-light), var(--steel)); color: var(--paper);
     padding: calc(env(safe-area-inset-top, 0px) + 22px) 20px 18px; border-bottom: 5px solid var(--red); position: sticky; top: 0; z-index: 50; box-shadow: 0 4px 14px rgba(0,0,0,0.25); }
   header h1 { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 28px; letter-spacing: 2px; text-transform: uppercase; display: flex; align-items: center; gap: 12px; }
@@ -86,17 +86,17 @@
   .score-badge.s-mid  { background:#fdf5e0; color:#8a6c00; border:1px solid #f0d98a; }
   .score-badge.s-good { background:#eef6f1; color:var(--green); border:1px solid #b9dfc8; }
   .score-badge.s-top  { background:#fff8e0; color:#8a6c00; border:1px solid var(--gold); }
-  .score-pick-btn { font-family:'Oswald',sans-serif; font-size:15px; font-weight:700; padding:8px 0; border:2px solid var(--paper-line); border-radius:8px; background:#fff; cursor:pointer; width:100%; transition:all 0.1s; }
+  .score-pick-btn { font-family:'Oswald',sans-serif; font-size:13px; font-weight:700; padding:5px 0; border:2px solid var(--paper-line); border-radius:6px; background:#fff; cursor:pointer; width:100%; transition:all 0.1s; }
   .score-pick-btn:active, .score-pick-btn.sel { border-color:var(--red); color:var(--red); background:#fdeaea; }
-  .setting-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--paper-line); }
+  .setting-row { display:flex; align-items:center; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--paper-line); }
   .setting-row:last-child { border-bottom:none; }
-  .setting-row label { font-size:14px; cursor:pointer; flex:1; }
-  .toggle-switch { position:relative; width:44px; height:24px; flex-shrink:0; }
+  .setting-row label { font-size:13px; cursor:pointer; flex:1; }
+  .toggle-switch { position:relative; width:38px; height:20px; flex-shrink:0; }
   .toggle-switch input { opacity:0; width:0; height:0; position:absolute; }
-  .toggle-track { position:absolute; inset:0; background:#ccc; border-radius:12px; transition:background 0.2s; cursor:pointer; }
-  .toggle-track::after { content:''; position:absolute; width:18px; height:18px; border-radius:50%; background:#fff; top:3px; left:3px; transition:transform 0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.2); }
+  .toggle-track { position:absolute; inset:0; background:#ccc; border-radius:10px; transition:background 0.2s; cursor:pointer; }
+  .toggle-track::after { content:''; position:absolute; width:14px; height:14px; border-radius:50%; background:#fff; top:3px; left:3px; transition:transform 0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.2); }
   .toggle-switch input:checked + .toggle-track { background:var(--green); }
-  .toggle-switch input:checked + .toggle-track::after { transform:translateX(20px); }
+  .toggle-switch input:checked + .toggle-track::after { transform:translateX(18px); }
   .hist-item .kok-alt { font-family:'Oswald',sans-serif; font-size:16px; font-weight:600; }
   table { width: 100%; border-collapse: collapse; }
   thead th { background: var(--steel); color: #fff; font-family: 'Oswald', sans-serif; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; font-size: 12px; padding: 11px 8px; text-align: center; white-space: nowrap; }
@@ -112,7 +112,7 @@
   .role-pill { font-size:10px; font-family:'Oswald'; text-transform:uppercase; letter-spacing:0.5px; background:var(--red); color:#fff; padding:2px 6px; border-radius:10px; margin-left:6px; vertical-align:middle; }
   .mini { background: none; border: none; cursor: pointer; font-size: 14px; color: var(--muted); padding: 4px; border-radius: 4px; }
   .mini:hover { background: var(--paper); color: var(--ink); }
-  .toolbar { position: fixed; bottom: 0; left: 0; right: 0; display: flex; flex-wrap: nowrap; gap: 8px; align-items: center; background: rgba(244,241,234,0.97); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border-top: 2px solid var(--paper-line); padding: 10px 16px; padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40; box-shadow: 0 -4px 14px rgba(0,0,0,0.1); }
+  .toolbar { position: fixed; bottom: 0; left: 0; right: 0; display: flex; flex-wrap: nowrap; gap: 8px; align-items: center; background: rgba(244,241,234,0.97); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border-top: 2px solid var(--paper-line); padding: 6px 16px; padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px)); z-index: 40; box-shadow: 0 -4px 14px rgba(0,0,0,0.1); }
   .btn { font-family: 'Oswald', sans-serif; letter-spacing: 0.5px; text-transform: uppercase; font-size: 13px; padding: 10px 14px; border-radius: 6px; border: 2px solid var(--steel); background: #fff; color: var(--steel); cursor: pointer; transition: background 0.15s, color 0.15s; text-align:center; }
   .btn:hover { background: var(--steel); color: #fff; }
   .btn.primary { background: var(--steel); color: #fff; }
@@ -632,6 +632,10 @@
             <div><b>Gekookt</b> — hoe vaak je in totaal ooit hebt gekookt. Wordt gebruikt als tiebreaker: wie het minst heeft gekookt gaat voor.</div>
             <div><b>Diensten</b> — hoe vaak je totaal aanwezig bent geweest. Ook tiebreaker: wie de meeste diensten heeft gedraaid gaat voor bij gelijke stand.</div>
           </div>
+        </div>
+        <div id="beoordelingHelpSection" style="display:none;background:#faf9f5;border-radius:8px;padding:12px 14px;border:1px solid var(--paper-line)">
+          <div style="font-family:'Oswald';text-transform:uppercase;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:8px">Maaltijdbeoordeling</div>
+          <div style="font-size:14px">Tik op <b>☆</b> bij een history-entry om de maaltijd een cijfer te geven (0–10). De score verschijnt als gekleurde badge in de Historie en als gemiddelde in de Ranglijst.</div>
         </div>
         <div style="background:#faf9f5;border-radius:8px;padding:12px 14px;border:1px solid var(--paper-line)">
           <div style="font-family:'Oswald';text-transform:uppercase;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:8px">Bij gelijkstand</div>
@@ -1459,7 +1463,10 @@ function restoreBackup(index) {
   save(); closeManage(); render();
   toast('Hersteld naar ' + lbl);
 }
-function openHelp(){ document.getElementById('helpOverlay').classList.add('show'); }
+function openHelp(){
+  document.getElementById('beoordelingHelpSection').style.display = config.beoordelingActief === true ? '' : 'none';
+  document.getElementById('helpOverlay').classList.add('show');
+}
 function closeHelp(){ document.getElementById('helpOverlay').classList.remove('show'); }
 function openPersonDetail(id) {
   const p = people.find(x => x.id === id);
