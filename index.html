@@ -188,7 +188,6 @@
     <button class="tab active" id="tabDienst" onclick="setMode(&#39;dienst&#39;)">Dienst</button>
     <button class="tab" id="tabRang" onclick="setMode(&#39;rang&#39;)">Ranglijst</button>
     <button class="tab" id="tabHist" onclick="setMode(&#39;hist&#39;)">Historie</button>
-    <button class="tab" id="tabLog" onclick="setMode(&#39;log&#39;)">Logboek</button>
   </div>
   <div class="panel" id="panelDienst">
     <div class="dienst-head">
@@ -415,11 +414,14 @@
   <div class="panel hidden" id="panelHist">
     <div id="histList"></div>
     <div id="histEmpty" class="empty-state"><div class="big">📜</div>Nog geen verwerkte diensten.</div>
-  </div>
-  <div class="panel hidden" id="panelLog">
-    <div style="padding:10px 16px 6px;font-size:12px;color:var(--muted);font-family:'Oswald';text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--paper-line)">Automatisch logboek — alleen-lezen</div>
-    <div id="logList"></div>
-    <div id="logEmpty" class="empty-state"><div class="big">🔍</div>Nog geen wijzigingen geregistreerd.</div>
+    <div style="border-top:2px solid var(--paper-line);padding:12px 16px">
+      <button id="logToggleBtn" class="btn ghost" onclick="toggleLog()" style="width:100%;font-size:13px;font-family:'Oswald';letter-spacing:0.5px;text-transform:uppercase">📋 Toon wijzigingslog</button>
+    </div>
+    <div id="logSection" style="display:none">
+      <div style="padding:8px 16px 6px;font-size:11px;color:var(--muted);font-family:'Oswald';text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--paper-line)">Wijzigingslog — alleen-lezen</div>
+      <div id="logList"></div>
+      <div id="logEmpty" class="empty-state" style="padding:20px"><div class="big" style="font-size:28px">🔍</div>Nog geen wijzigingen geregistreerd.</div>
+    </div>
   </div>
   <div class="toolbar">
     <span class="counthint" id="counthint" style="display:none"></span>
@@ -615,16 +617,7 @@
 const STORE_KEY = 'priklijst_brandweer_v3';
 const SUPABASE_URL = 'https://hhylodhsbfdhlfdqlxjp.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhoeWxvZGhzYmZkaGxmZHFseGpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4NzY3ODEsImV4cCI6MjA5NjQ1Mjc4MX0.ROZLXAHyzw1z_MDHHCuW589ebgSRF8z0vYxxUMIlNkQ';
-const SEED = [
-  "Arjan Hennink","Barry Douma","Barry Fidder","Bas Schermer","Benjamin Ootjers",
-  "Berend Gulien","Borre Combee","Brian Bruist","Brian Clarkson","Dave Davio",
-  "Deniz Akin","Emma Reijmerink","Eric Huibers","Gijs Nijland","Jacob Appelman",
-  "Jimmy Hendriks","Kasper Schekkerman","Marijn Doesburg","Maurice Dorsman","Merel Atia",
-  "Michel Uhlenkamp","Michiel Muller","Miranda van der Kroft","Mitchell van den Berg","Nick v/d Ven",
-  "Niels Berndsen","Rene Butter","Roy Brinkman","Roy Meijerink","Said Lahri",
-  "Sam de Boer","Sebastiaan Hoffman","Stefan Verbeek","Suraj O'Neil","Tjalle de Fouw",
-  "Tom Rinkel","Tom Schruijer","Vincent Lugtenaar","Waldo Oosterhoff"
-];
+// Namen staan uitsluitend in Supabase — niet in broncode (AVG)
 let mode = 'dienst';
 let state = load();
 let people = state.people;
@@ -639,11 +632,8 @@ function load() {
     const raw = localStorage.getItem(STORE_KEY);
     if (raw) { const d = JSON.parse(raw); return { people: d.people||[], history: d.history||[], auditLog: d.auditLog||[] }; }
   } catch(e) {}
-  return {
-    people: SEED.map((n,i) => ({ id: 'p'+i+'_'+Date.now()+Math.random().toString(36).slice(2,6),
-      name: n, stamb: '', counter: 0, cooked: 0, diensten: 0, bevelvoerder: false })),
-    history: [], auditLog: []
-  };
+  // Geen lokale data → app wacht op Supabase-sync
+  return { people: [], history: [], auditLog: [] };
 }
 function save() {
   try { localStorage.setItem(STORE_KEY, JSON.stringify({people, history, auditLog})); } catch(e) {}
@@ -695,7 +685,7 @@ function eligibleCooks() {
 }
 function setMode(m) {
   mode = m;
-  ['Dienst','Rang','Hist','Log'].forEach(x => {
+  ['Dienst','Rang','Hist'].forEach(x => {
     document.getElementById('tab'+x).classList.toggle('active', m===x.toLowerCase());
     document.getElementById('panel'+x).classList.toggle('hidden', m!==x.toLowerCase());
   });
@@ -710,8 +700,7 @@ function defaultCooks(p) { return !p.bevelvoerder; }
 function render() {
   if (mode === 'dienst') renderDienst();
   else if (mode === 'rang') renderRang();
-  else if (mode === 'hist') renderHist();
-  else if (mode === 'log') renderLog();
+  else renderHist();
   document.getElementById('counthint').textContent =
     people.length + ' personen · ' + people.filter(p=>p.bevelvoerder).length + ' bevelvoerder(s)';
   save();
@@ -783,9 +772,10 @@ function renderHist() {
   const list = document.getElementById('histList');
   document.getElementById('histEmpty').style.display = history.length ? 'none' : 'block';
   history.sort((a, b) => {
-    const ta = a.dienstDate ? new Date(a.dienstDate+'T12:00:00').getTime() : a.ts;
-    const tb = b.dienstDate ? new Date(b.dienstDate+'T12:00:00').getTime() : b.ts;
-    return tb - ta;
+    const ta = a.dienstDate ? new Date(a.dienstDate+'T23:59:59').getTime() : a.ts;
+    const tb = b.dienstDate ? new Date(b.dienstDate+'T23:59:59').getTime() : b.ts;
+    if (tb !== ta) return tb - ta;
+    return b.ts - a.ts; // zelfde datum: meest recent toegevoegd bovenaan
   });
   list.innerHTML = history.map((h, i) => {
     const d = h.dienstDate ? new Date(h.dienstDate + 'T12:00:00') : new Date(h.ts);
@@ -845,6 +835,14 @@ function renderLog() {
       <span class="log-badge ${e.type}">${lbl}</span>${esc(e.tekst)}
     </div>`;
   }).join('');
+}
+function toggleLog() {
+  const s = document.getElementById('logSection');
+  const btn = document.getElementById('logToggleBtn');
+  const toon = s.style.display === 'none';
+  s.style.display = toon ? '' : 'none';
+  btn.textContent = toon ? '📋 Verberg wijzigingslog' : '📋 Toon wijzigingslog';
+  if (toon) renderLog();
 }
 function addAuditEntry(type, tekst) {
   auditLog.unshift({ ts: Date.now(), type, tekst });
