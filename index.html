@@ -211,6 +211,7 @@
   <div style="font-size:56px;line-height:1">🔥</div>
   <div id="accessTitle" style="font-family:'Oswald',sans-serif;font-weight:700;font-size:26px;letter-spacing:2px;text-transform:uppercase;color:#f4f1ea;text-align:center">Priklijst</div>
   <div style="color:#b9bcc2;font-size:14px;text-align:center;max-width:280px">Voer de PIN in om toegang te krijgen</div>
+  <div id="accessHint" style="display:none;background:rgba(255,255,255,0.08);border-radius:8px;padding:8px 16px;color:#f4f1ea;font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:1px;text-transform:uppercase;text-align:center"></div>
   <div style="width:100%;max-width:280px;display:flex;flex-direction:column;gap:10px">
     <input id="accessPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="PIN" autocomplete="off"
       style="width:100%;padding:14px;border:2px solid rgba(255,255,255,0.2);border-radius:10px;background:rgba(255,255,255,0.08);color:#f4f1ea;font-size:22px;font-family:'Oswald',sans-serif;letter-spacing:6px;text-align:center;outline:none"
@@ -538,9 +539,20 @@
       </div>
     </div>
     <div style="padding:0 20px 16px;border-top:1px solid var(--paper-line);margin-top:12px">
-      <div class="pick-label" style="margin:12px 0 6px">PIN wijzigen</div>
+      <div class="pick-label" style="margin:12px 0 8px">Toegangspoort</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input id="toegangspinInput" type="password" maxlength="6" inputmode="numeric" placeholder="Toegangs-PIN" style="flex:1;padding:8px 10px;border:1.5px solid var(--paper-line);border-radius:5px;font-family:'Barlow';font-size:14px">
+        <button class="btn ghost" onclick="saveToegangspin()">Opslaan</button>
+      </div>
       <div style="display:flex;gap:8px">
-        <input id="newPinInput" type="password" maxlength="6" inputmode="numeric" placeholder="Nieuwe PIN (min. 4 cijfers)" style="flex:1;padding:8px 10px;border:1.5px solid var(--paper-line);border-radius:5px;font-family:'Barlow';font-size:14px">
+        <input id="toegangsHintInput" type="text" maxlength="30" placeholder="Hint op toegangsscherm (bijv. voertuignummer)" style="flex:1;padding:8px 10px;border:1.5px solid var(--paper-line);border-radius:5px;font-family:'Barlow';font-size:14px">
+        <button class="btn ghost" onclick="saveToegangsHint()">Opslaan</button>
+      </div>
+    </div>
+    <div style="padding:0 20px 16px;border-top:1px solid var(--paper-line);margin-top:12px">
+      <div class="pick-label" style="margin:12px 0 6px">Beheerders-PIN wijzigen</div>
+      <div style="display:flex;gap:8px">
+        <input id="newPinInput" type="password" maxlength="6" inputmode="numeric" placeholder="Nieuwe beheerders-PIN (min. 4 cijfers)" style="flex:1;padding:8px 10px;border:1.5px solid var(--paper-line);border-radius:5px;font-family:'Barlow';font-size:14px">
         <button class="btn ghost" onclick="changePin()">Opslaan</button>
       </div>
     </div>
@@ -711,10 +723,10 @@ function load() {
     if (raw) {
       const d = JSON.parse(raw);
       const cfg = d.config || {};
-      return { people: d.people||[], history: d.history||[], auditLog: d.auditLog||[], config: {kazerneNaam:'Priklijst',pin:'1234',dienstGrootte:8,dienstWaarschuwing:true,beoordelingActief:false,...cfg} };
+      return { people: d.people||[], history: d.history||[], auditLog: d.auditLog||[], config: {kazerneNaam:'Priklijst',pin:'1234',toegangspin:'',toegangsHint:'',dienstGrootte:8,dienstWaarschuwing:true,beoordelingActief:false,...cfg} };
     }
   } catch(e) {}
-  return { people: [], history: [], auditLog: [], config: {kazerneNaam:'Priklijst',pin:'1234',dienstGrootte:8,dienstWaarschuwing:true,beoordelingActief:false} };
+  return { people: [], history: [], auditLog: [], config: {kazerneNaam:'Priklijst',pin:'1234',toegangspin:'',toegangsHint:'',dienstGrootte:8,dienstWaarschuwing:true,beoordelingActief:false} };
 }
 function save() {
   try { localStorage.setItem(STORE_KEY, JSON.stringify({people, history, auditLog, config})); } catch(e) {}
@@ -1260,6 +1272,10 @@ function doOpenManage() {
   // Pre-vul kazerne naam
   const ki = document.getElementById('kazerneNaamInput');
   if (ki) ki.value = config.kazerneNaam || '';
+  const tpi = document.getElementById('toegangspinInput');
+  if (tpi) tpi.value = '';
+  const thi = document.getElementById('toegangsHintInput');
+  if (thi) thi.value = config.toegangsHint || '';
   const dgi = document.getElementById('dienstGrootteInput');
   if (dgi) dgi.value = config.dienstGrootte ?? 8;
   const wt = document.getElementById('waarschuwingToggle');
@@ -1392,6 +1408,27 @@ function updateHeader() {
   document.getElementById('headerTitle').textContent = 'Priklijst ' + naam + '.';
   const at = document.getElementById('accessTitle');
   if (at) at.textContent = 'Priklijst ' + naam + '.';
+  const ah = document.getElementById('accessHint');
+  if (ah) {
+    const hint = config.toegangsHint || '';
+    ah.style.display = hint ? '' : 'none';
+    ah.textContent = '🚒 ' + hint;
+  }
+}
+function saveToegangspin() {
+  const val = document.getElementById('toegangspinInput').value.trim();
+  if (!val || val.length < 4) { toast('Toegangs-PIN moet minimaal 4 cijfers zijn'); return; }
+  config.toegangspin = val;
+  document.getElementById('toegangspinInput').value = '';
+  addAuditEntry('pin_gewijzigd', 'Toegangs-PIN gewijzigd');
+  saveConfig(); toast('Toegangs-PIN opgeslagen');
+}
+function saveToegangsHint() {
+  const val = document.getElementById('toegangsHintInput').value.trim();
+  config.toegangsHint = val;
+  updateHeader();
+  addAuditEntry('instellingen_gewijzigd', `Toegangshint: "${val}"`);
+  saveConfig(); toast('Hint opgeslagen');
 }
 function saveDienstGrootte() {
   const val = parseInt(document.getElementById('dienstGrootteInput').value);
@@ -1569,7 +1606,7 @@ if (_authed) {
 }
 function submitAccess() {
   const val = document.getElementById('accessPinInput').value;
-  const stored = config.pin || '1234';
+  const stored = config.toegangspin || config.pin || '1234';
   if (val === stored) {
     localStorage.setItem('priklijst_toegang', '1');
     document.getElementById('accessOverlay').style.display = 'none';
@@ -1595,7 +1632,7 @@ render();
       changed = true;
     }
     if (row.id === 'config' && row.people && typeof row.people === 'object' && !Array.isArray(row.people)) {
-      config = { kazerneNaam: 'Priklijst', pin: '1234', ...row.people };
+      config = { kazerneNaam: 'Priklijst', pin: '1234', toegangspin: '', toegangsHint: '', ...row.people };
       updateHeader();
       changed = true;
     }
