@@ -1531,7 +1531,10 @@ function openPersonDetail(id) {
     ? '<div class="cook-hist-list">' + cookHist.map(h => {
         const d = h.dienstDate ? new Date(h.dienstDate+'T12:00:00') : new Date(h.ts);
         const datum = d.toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
-        return `<div class="cook-hist-entry"><span>🔥 ${datum}</span><span class="substat">${h.aantal} aanwezig${h.handmatig?' · handmatig':''}</span></div>`;
+        const scoreCls = h.score == null ? '' : h.score < 5 ? 's-low' : h.score < 7 ? 's-mid' : h.score < 9 ? 's-good' : 's-top';
+        const scoreBadge = (config.beoordelingActief === true && h.score != null)
+          ? ` <span class="score-badge ${scoreCls}">⭐ ${h.score}</span>` : '';
+        return `<div class="cook-hist-entry"><span>🔥 ${datum}${scoreBadge}</span><span class="substat">${h.aantal} aanwezig${h.handmatig?' · handmatig':''}</span></div>`;
       }).join('') + '</div>'
     : '<div style="color:var(--muted);font-size:14px;padding:12px 0;text-align:center">Nog niet gekookt (in dit systeem)</div>';
   document.getElementById('personBody').innerHTML = `
