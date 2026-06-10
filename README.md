@@ -58,6 +58,26 @@ ALTER TABLE priklijst_state ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "public read" ON priklijst_state FOR SELECT USING (true);
 CREATE POLICY "public write" ON priklijst_state FOR ALL USING (true);
+
+-- Dataverlies-beveiliging: voorkom dat een oud apparaat met gecachte data
+-- de history in Supabase verkort (bijv. door een verouderde lokale opslag)
+CREATE OR REPLACE FUNCTION prevent_history_shrink()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  IF NEW.id = 'main'
+     AND jsonb_typeof(OLD.history) = 'array'
+     AND jsonb_typeof(NEW.history) = 'array'
+     AND jsonb_array_length(NEW.history) < jsonb_array_length(OLD.history) THEN
+    RAISE EXCEPTION 'history_shrink_blocked: % → % entries',
+      jsonb_array_length(OLD.history), jsonb_array_length(NEW.history);
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_prevent_history_shrink
+  BEFORE UPDATE ON priklijst_state
+  FOR EACH ROW EXECUTE FUNCTION prevent_history_shrink();
 ```
 
 4. Ga naar **Settings → API** en noteer:
