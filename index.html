@@ -420,11 +420,6 @@
   <div class="panel hidden" id="panelHist">
     <div id="histList"></div>
     <div id="histEmpty" class="empty-state"><div class="big">📜</div>Nog geen verwerkte diensten.</div>
-    <div id="logSection" style="display:none">
-      <div style="padding:8px 16px 6px;font-size:11px;color:var(--muted);font-family:'Oswald';text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--paper-line)">Wijzigingslog — alleen-lezen</div>
-      <div id="logList"></div>
-      <div id="logEmpty" class="empty-state" style="padding:20px"><div class="big" style="font-size:28px">🔍</div>Nog geen wijzigingen geregistreerd.</div>
-    </div>
   </div>
   <div class="toolbar">
     <span class="counthint" id="counthint" style="display:none"></span>
@@ -547,6 +542,14 @@
   </div>
 </div>
 <!-- HELP MODAL -->
+<div class="overlay" id="logOverlay">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-head">Wijzigingslog <button class="x" onclick="closeLog()">×</button></div>
+    <div style="padding:8px 16px 6px;font-size:11px;color:var(--muted);font-family:'Oswald';text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--paper-line)">Alleen-lezen — automatisch bijgehouden</div>
+    <div id="logList"></div>
+    <div id="logEmpty" class="empty-state" style="padding:24px"><div class="big" style="font-size:28px">🔍</div>Nog geen wijzigingen geregistreerd.</div>
+  </div>
+</div>
 <div class="overlay" id="helpOverlay">
   <div class="modal" style="max-width:480px">
     <div class="modal-head">Hoe werkt het? <button class="x" onclick="closeHelp()">×</button></div>
@@ -726,8 +729,8 @@ function setMode(m) {
   document.getElementById('toolbarBepaal').style.display = isDienst ? '' : 'none';
   document.getElementById('logToggleBtn').style.display = isHist ? '' : 'none';
   document.getElementById('counthint').style.display = isDienst ? 'none' : '';
-  // Log sectie dichtklappen als je van history weg navigeert
-  if (!isHist) { document.getElementById('logSection').style.display = 'none'; }
+  // Log popup sluiten als je van history weg navigeert
+  if (!isHist) { closeLog(); }
   render();
 }
 function defaultCooks(p) { return !p.bevelvoerder; }
@@ -879,12 +882,11 @@ function renderLog() {
   }).join('');
 }
 function toggleLog() {
-  const s = document.getElementById('logSection');
-  const btn = document.getElementById('logToggleBtn');
-  const toon = s.style.display === 'none';
-  s.style.display = toon ? '' : 'none';
-  btn.textContent = 'LOG';
-  if (toon) renderLog();
+  renderLog();
+  document.getElementById('logOverlay').classList.add('show');
+}
+function closeLog() {
+  document.getElementById('logOverlay').classList.remove('show');
 }
 function addAuditEntry(type, tekst) {
   auditLog.unshift({ ts: Date.now(), type, tekst });
@@ -1414,7 +1416,7 @@ document.getElementById('pinInput').addEventListener('keydown',e=>{if(e.key==='E
 ['statsEditCounter','statsEditCooked','statsEditDiensten'].forEach(id=>{
   document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')saveStatsEdit();});
 });
-['confirmOverlay','addOverlay','manageOverlay','statsEditOverlay','personOverlay','editDienstOverlay'].forEach(id=>{
+['confirmOverlay','addOverlay','manageOverlay','statsEditOverlay','personOverlay','editDienstOverlay','logOverlay'].forEach(id=>{
   const o=document.getElementById(id);
   o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('show');});
 });
