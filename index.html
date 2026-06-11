@@ -438,7 +438,7 @@
           <th class="name-col">Naam</th>
           <th title="Diensten aanwezig zonder te koken — hoog = eerder aan de beurt">Beurtteller</th>
           <th class="hide-mobile" title="Hoe vaak totaal gekookt">Gekookt</th>
-          <th class="hide-mobile" title="Gemiddelde maaltijdscore" id="thScore" style="display:none">Score</th>
+          <th title="Gemiddelde maaltijdscore" id="thScore" style="display:none">Score</th>
           <th class="hide-mobile" title="Hoe vaak totaal aanwezig geweest">Diensten</th>
         </tr>
       </thead>
@@ -868,10 +868,10 @@ function renderRang() {
   const avgScore = (pid) => {
     if (!showScore) return '';
     const sc = history.filter(h => h.kokId === pid && h.score != null).map(h => h.score);
-    if (!sc.length) return '<td class="hide-mobile substat" style="color:var(--muted)">—</td>';
+    if (!sc.length) return '<td class="substat" style="color:var(--muted)">—</td>';
     const avg = (sc.reduce((a,b)=>a+b,0)/sc.length).toFixed(1);
     const cls = avg<5 ? 's-low' : avg<7 ? 's-mid' : avg<9 ? 's-good' : 's-top';
-    return `<td class="hide-mobile substat"><span class="score-badge ${cls}">${avg}</span></td>`;
+    return `<td class="substat"><span class="score-badge ${cls}">${avg}</span></td>`;
   };
   let rows = regular.map((p, idx) => `
     <tr class="${next && p.id===next.id ? 'next-cook':''}">
@@ -941,7 +941,7 @@ function renderHist() {
     const scoreLabel = h.score == null ? '☆' : `⭐ ${h.score}`;
     const scoreBtn = config.beoordelingActief === true
       ? `<button class="btn ghost hist-undo score-btn" onclick="rateEntry(${i})" title="Beoordeling" style="padding:5px 8px;font-size:12px;font-family:'Oswald';letter-spacing:0.5px${h.score!=null?';color:inherit':''}">${h.score != null ? `<span class="score-badge ${scoreCls}" style="pointer-events:none">${scoreLabel}</span>` : scoreLabel}</button>`
-      : h.score != null ? `<span class="score-badge ${scoreCls}" style="margin-left:4px">⭐ ${h.score}</span>` : '';
+      : '';
     return `<div class="hist-item">
       <div class="top">
         <div class="top-left"><span class="kok">${esc(h.kokNaam)}</span><span class="date">${datum}</span></div>
@@ -1532,7 +1532,7 @@ function openPersonDetail(id) {
         const d = h.dienstDate ? new Date(h.dienstDate+'T12:00:00') : new Date(h.ts);
         const datum = d.toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
         const scoreCls = h.score == null ? '' : h.score < 5 ? 's-low' : h.score < 7 ? 's-mid' : h.score < 9 ? 's-good' : 's-top';
-        const scoreBadge = h.score != null
+        const scoreBadge = (config.beoordelingActief === true && h.score != null)
           ? ` <span class="score-badge ${scoreCls}">⭐ ${h.score}</span>` : '';
         return `<div class="cook-hist-entry"><span>🔥 ${datum}${scoreBadge}</span><span class="substat">${h.aantal} aanwezig${h.handmatig?' · handmatig':''}</span></div>`;
       }).join('') + '</div>'
