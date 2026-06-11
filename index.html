@@ -217,7 +217,7 @@
       style="width:100%;padding:14px;border:2px solid rgba(255,255,255,0.2);border-radius:10px;background:rgba(255,255,255,0.08);color:#f4f1ea;font-size:22px;font-family:'Oswald',sans-serif;letter-spacing:6px;text-align:center;outline:none"
       onkeydown="if(event.key==='Enter')submitAccess()">
     <div id="accessError" style="color:#f08080;font-size:13px;text-align:center;display:none">Verkeerde PIN, probeer opnieuw</div>
-    <button onclick="submitAccess()" style="width:100%;padding:14px;background:var(--red);border:none;border-radius:10px;color:#fff;font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer">Toegang</button>
+    <button id="accessBtn" onclick="submitAccess()" style="width:100%;padding:14px;background:var(--red);border:none;border-radius:10px;color:#fff;font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer">Toegang</button>
   </div>
 </div>
 <div class="wrap">
@@ -1602,9 +1602,13 @@ document.getElementById('pinOverlay').addEventListener('click',e=>{if(e.target==
 document.getElementById('helpOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('helpOverlay'))closeHelp();});
 // Toegangspoort — éénmalig per apparaat
 const _authed = localStorage.getItem('priklijst_toegang') === '1';
+let _cloudConfigLoaded = false;
 if (_authed) {
   document.getElementById('accessOverlay').style.display = 'none';
 } else {
+  // Knop uitschakelen totdat Supabase config geladen is (PIN + hint komen van cloud)
+  const _ab = document.getElementById('accessBtn');
+  if (_ab) { _ab.textContent = 'Laden…'; _ab.disabled = true; _ab.style.opacity = '0.5'; _ab.style.cursor = 'default'; }
   document.getElementById('accessPinInput').focus();
 }
 function submitAccess() {
@@ -1638,6 +1642,12 @@ render();
       config = { kazerneNaam: 'Priklijst', pin: '1234', toegangspin: '', toegangsHint: '', ...row.people };
       updateHeader();
       changed = true;
+      // Nu config geladen is: toegangsknop activeren en hint tonen
+      if (!_authed) {
+        const _ab = document.getElementById('accessBtn');
+        if (_ab) { _ab.textContent = 'Toegang'; _ab.disabled = false; _ab.style.opacity = ''; _ab.style.cursor = ''; }
+      }
+      _cloudConfigLoaded = true;
     }
     if (row.id === 'audit' && Array.isArray(row.history)) {
       auditLog = row.history;
@@ -1661,6 +1671,11 @@ render();
   }
   // Pas ná de cloud-load mogen cloud-saves plaatsvinden (race condition fix)
   _cloudReady = true;
+  // Fallback: als Supabase geen config-rij had, knop alsnog activeren
+  if (!_authed && !_cloudConfigLoaded) {
+    const _ab = document.getElementById('accessBtn');
+    if (_ab) { _ab.textContent = 'Toegang'; _ab.disabled = false; _ab.style.opacity = ''; _ab.style.cursor = ''; }
+  }
 })();
 </script>
 
