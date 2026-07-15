@@ -469,19 +469,21 @@
     <div class="modal-head">Wie kookt? <button class="x" onclick="closeConfirm()">×</button></div>
     <div class="modal-body">
       <div class="confirm-kok">
-        <div style="font-family:&#39;Oswald&#39;;text-transform:uppercase;font-size:12px;letter-spacing:1px;color:var(--muted)">Voorgesteld op basis van ranglijst</div>
+        <div style="font-family:&#39;Oswald&#39;;text-transform:uppercase;font-size:12px;letter-spacing:1px;color:var(--muted)" id="confTitle">Voorgesteld op basis van ranglijst</div>
         <div class="big-name" id="confName">—</div>
         <div class="sub" id="confSub"></div>
       </div>
-      <div class="pick-label">Of kies handmatig een andere aanwezige:</div>
-      <div class="pick-list" id="pickList"></div>
-      <div style="margin-top:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <label style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);font-family:'Oswald';white-space:nowrap;margin:0">Datum dienst</label>
-        <input type="date" id="confDate" style="padding:7px 10px;font-size:14px;border:2px solid var(--paper-line);border-radius:6px;font-family:'Barlow';background:#fff;width:auto;flex:0 0 auto">
+      <div id="confRest">
+        <div class="pick-label">Of kies handmatig een andere aanwezige:</div>
+        <div class="pick-list" id="pickList"></div>
+        <div style="margin-top:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <label style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);font-family:'Oswald';white-space:nowrap;margin:0">Datum dienst</label>
+          <input type="date" id="confDate" style="padding:7px 10px;font-size:14px;border:2px solid var(--paper-line);border-radius:6px;font-family:'Barlow';background:#fff;width:auto;flex:0 0 auto">
+        </div>
+        <div id="dienstWarning" style="display:none;margin-top:10px;padding:9px 12px;background:#fdeaea;border:1px solid #f5baba;border-radius:6px;color:var(--red);font-size:13px;font-weight:600;line-height:1.4"></div>
       </div>
-      <div id="dienstWarning" style="display:none;margin-top:10px;padding:9px 12px;background:#fdeaea;border:1px solid #f5baba;border-radius:6px;color:var(--red);font-size:13px;font-weight:600;line-height:1.4"></div>
     </div>
-    <div class="modal-foot">
+    <div class="modal-foot" id="confFoot">
       <button class="btn" onclick="closeConfirm()">Annuleren</button>
       <button class="btn green" onclick="confirmCommit()">Bevestig &amp; verwerk</button>
     </div>
@@ -536,6 +538,10 @@
       <div class="setting-row">
         <label for="beoordelingToggle">Maaltijdbeoordeling (0–10)</label>
         <label class="toggle-switch"><input type="checkbox" id="beoordelingToggle" onchange="toggleBeoordeling()"><span class="toggle-track"></span></label>
+      </div>
+      <div class="setting-row">
+        <label for="hypeToggle">Hype-animatie tonen bij kookkeuze</label>
+        <label class="toggle-switch"><input type="checkbox" id="hypeToggle" onchange="toggleHype()"><span class="toggle-track"></span></label>
       </div>
     </div>
     <div style="padding:0 20px 16px;border-top:1px solid var(--paper-line);margin-top:12px">
@@ -723,10 +729,10 @@ function load() {
     if (raw) {
       const d = JSON.parse(raw);
       const cfg = d.config || {};
-      return { people: d.people||[], history: d.history||[], auditLog: d.auditLog||[], config: {kazerneNaam:'Priklijst',pin:'1234',toegangspin:'',toegangsHint:'',dienstGrootte:8,dienstWaarschuwing:true,beoordelingActief:false,...cfg} };
+      return { people: d.people||[], history: d.history||[], auditLog: d.auditLog||[], config: {kazerneNaam:'Priklijst',pin:'1234',toegangspin:'',toegangsHint:'',dienstGrootte:8,dienstWaarschuwing:true,beoordelingActief:false,hypeAnimatie:true,...cfg} };
     }
   } catch(e) {}
-  return { people: [], history: [], auditLog: [], config: {kazerneNaam:'Priklijst',pin:'1234',toegangspin:'',toegangsHint:'',dienstGrootte:8,dienstWaarschuwing:true,beoordelingActief:false} };
+  return { people: [], history: [], auditLog: [], config: {kazerneNaam:'Priklijst',pin:'1234',toegangspin:'',toegangsHint:'',dienstGrootte:8,dienstWaarschuwing:true,beoordelingActief:false,hypeAnimatie:true} };
 }
 function save() {
   try { localStorage.setItem(STORE_KEY, JSON.stringify({people, history, auditLog, config})); } catch(e) {}
@@ -1010,15 +1016,33 @@ function pickFromTied(sorted) {
   });
   return tied.length > 1 ? tied[Math.floor(Math.random()*tied.length)] : top;
 }
+let hypeInterval = null;
 function startConfirm() {
   if (present.size === 0) { toast('Niemand aangevinkt'); return; }
   const elig = eligibleCooks();
   const top = elig.length ? pickFromTied(elig) : null;
   selectedKokId = top ? top.id : null;
-  document.getElementById('confName').textContent = top ? top.name : 'Niemand (iedereen kookt niet)';
-  document.getElementById('confSub').textContent = top
-    ? `Beurtteller ${top.counter} · ${top.cooked}× gekookt · ${top.diensten} diensten gedraaid`
-    : 'Vink iemand op "kookt mee" om een kok te kunnen kiezen';
+
+  const finishConfirm = () => {
+    document.getElementById('confTitle').textContent = 'Voorgesteld op basis van ranglijst';
+    document.getElementById('confName').textContent = top ? top.name : 'Niemand (iedereen kookt niet)';
+    document.getElementById('confSub').textContent = top
+      ? `Beurtteller ${top.counter} · ${top.cooked}× gekookt · ${top.diensten} diensten gedraaid`
+      : 'Vink iemand op "kookt mee" om een kok te kunnen kiezen';
+
+    document.getElementById('confRest').style.display = '';
+    document.getElementById('confFoot').style.display = '';
+
+    if (top && window.confetti) {
+      window.confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        zIndex: 2000
+      });
+    }
+  };
+
   const warn = document.getElementById('dienstWarning');
   const n = present.size;
   const _wdg = config.dienstGrootte ?? 8, _wdw = config.dienstWaarschuwing !== false;
@@ -1038,6 +1062,28 @@ function startConfirm() {
     </div>`).join('') || '<div style="padding:14px;color:var(--muted)">Geen kandidaten — iedereen staat op "kookt niet".</div>';
   document.getElementById('confDate').value = new Date().toISOString().slice(0,10);
   document.getElementById('confirmOverlay').classList.add('show');
+
+  if (config.hypeAnimatie !== false && elig.length > 1 && top) {
+    document.getElementById('confTitle').textContent = 'De computer kiest...';
+    document.getElementById('confSub').textContent = 'Bezig met berekenen...';
+    document.getElementById('confRest').style.display = 'none';
+    document.getElementById('confFoot').style.display = 'none';
+
+    let ticks = 0;
+    const maxTicks = 20;
+    clearInterval(hypeInterval);
+    hypeInterval = setInterval(() => {
+      const randP = elig[Math.floor(Math.random() * elig.length)];
+      document.getElementById('confName').textContent = randP.name;
+      ticks++;
+      if (ticks >= maxTicks) {
+        clearInterval(hypeInterval);
+        finishConfirm();
+      }
+    }, 100);
+  } else {
+    finishConfirm();
+  }
 }
 function pickKok(id, el) {
   selectedKokId = id;
@@ -1047,7 +1093,10 @@ function pickKok(id, el) {
   document.getElementById('confName').textContent = p.name;
   document.getElementById('confSub').textContent = `Beurtteller ${p.counter} · ${p.cooked}× gekookt · ${p.diensten} diensten gedraaid`;
 }
-function closeConfirm(){ document.getElementById('confirmOverlay').classList.remove('show'); }
+function closeConfirm(){
+  clearInterval(hypeInterval);
+  document.getElementById('confirmOverlay').classList.remove('show');
+}
 function confirmCommit() {
   const dienstDate = document.getElementById('confDate').value || new Date().toISOString().slice(0,10);
   // Blokkeer dubbele dienst op dezelfde datum
@@ -1282,6 +1331,8 @@ function doOpenManage() {
   if (wt) wt.checked = config.dienstWaarschuwing !== false;
   const bt = document.getElementById('beoordelingToggle');
   if (bt) bt.checked = config.beoordelingActief === true;
+  const ht = document.getElementById('hypeToggle');
+  if (ht) ht.checked = config.hypeAnimatie !== false;
   document.getElementById('manageBody').innerHTML = people.map(p => `
     <div class="edit-row" data-id="${p.id}">
       <div class="edit-row-main">
@@ -1446,6 +1497,11 @@ function toggleBeoordeling() {
   config.beoordelingActief = document.getElementById('beoordelingToggle').checked;
   addAuditEntry('instellingen_gewijzigd', `Maaltijdbeoordeling: ${config.beoordelingActief ? 'aan' : 'uit'}`);
   saveConfig(); render();
+}
+function toggleHype() {
+  config.hypeAnimatie = document.getElementById('hypeToggle').checked;
+  addAuditEntry('instellingen_gewijzigd', `Hype-animatie: ${config.hypeAnimatie ? 'aan' : 'uit'}`);
+  saveConfig();
 }
 let _rateIndex = null;
 function rateEntry(index) {
@@ -1678,6 +1734,5 @@ render();
   }
 })();
 </script>
-
-
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </body></html>
