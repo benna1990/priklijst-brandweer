@@ -723,6 +723,10 @@ let present = new Set();
 let cooksThisShift = {};
 let selectedKokId = null;
 
+function localDateStr(d) {
+  const dt = d || new Date();
+  return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+}
 function load() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
@@ -1060,7 +1064,7 @@ function startConfirm() {
       <span class="pn">${esc(p.name)}</span>
       <span class="ps">${p.counter} pt. · ${p.cooked}× gekookt</span>
     </div>`).join('') || '<div style="padding:14px;color:var(--muted)">Geen kandidaten — iedereen staat op "kookt niet".</div>';
-  document.getElementById('confDate').value = new Date().toISOString().slice(0,10);
+  document.getElementById('confDate').value = localDateStr();
   document.getElementById('confirmOverlay').classList.add('show');
 
   if (config.hypeAnimatie !== false && elig.length > 1 && top) {
@@ -1098,7 +1102,7 @@ function closeConfirm(){
   document.getElementById('confirmOverlay').classList.remove('show');
 }
 function confirmCommit() {
-  const dienstDate = document.getElementById('confDate').value || new Date().toISOString().slice(0,10);
+  const dienstDate = document.getElementById('confDate').value || localDateStr();
   // Blokkeer dubbele dienst op dezelfde datum
   const existing = history.find(h => (!h.type || h.type === 'dienst') && h.dienstDate === dienstDate);
   if (existing) {
