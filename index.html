@@ -877,7 +877,7 @@ function renderRang() {
   if (thScore) thScore.style.display = showScore ? '' : 'none';
   const avgScore = (pid) => {
     if (!showScore) return '';
-    const sc = history.filter(h => h.kokId === pid && h.score != null).map(h => h.score);
+    const sc = history.filter(h => !h._deleted && h.kokId === pid && h.score != null).map(h => h.score);
     if (!sc.length) return '<td class="substat" style="color:var(--muted)">—</td>';
     const avg = (sc.reduce((a,b)=>a+b,0)/sc.length).toFixed(1);
     const cls = avg<5 ? 's-low' : avg<7 ? 's-mid' : avg<9 ? 's-good' : 's-top';
@@ -908,7 +908,8 @@ function renderRang() {
 }
 function renderHist() {
   const list = document.getElementById('histList');
-  document.getElementById('histEmpty').style.display = history.length ? 'none' : 'block';
+  const visibleHist = history.filter(h => !h._deleted);
+  document.getElementById('histEmpty').style.display = visibleHist.length ? 'none' : 'block';
   history.sort((a, b) => {
     const ta = a.dienstDate ? new Date(a.dienstDate+'T23:59:59').getTime() : a.ts;
     const tb = b.dienstDate ? new Date(b.dienstDate+'T23:59:59').getTime() : b.ts;
@@ -916,6 +917,7 @@ function renderHist() {
     return b.ts - a.ts; // zelfde datum: meest recent toegevoegd bovenaan
   });
   list.innerHTML = history.map((h, i) => {
+    if (h._deleted) return '';
     const d = h.dienstDate ? new Date(h.dienstDate + 'T12:00:00') : new Date(h.ts);
     const datum = d.toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
     const type = h.type || 'dienst';
@@ -1104,7 +1106,7 @@ function closeConfirm(){
 function confirmCommit() {
   const dienstDate = document.getElementById('confDate').value || localDateStr();
   // Blokkeer dubbele dienst op dezelfde datum
-  const existing = history.find(h => (!h.type || h.type === 'dienst') && h.dienstDate === dienstDate);
+  const existing = history.find(h => !h._deleted && (!h.type || h.type === 'dienst') && h.dienstDate === dienstDate);
   if (existing) {
     const dl = new Date(dienstDate+'T12:00:00').toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long'});
     alert(`Op ${dl} heeft ${existing.kokNaam} al gekookt.\nTwee diensten op dezelfde datum zijn niet toegestaan.\n\nPas de datum aan of maak de vorige dienst ongedaan via de Historie.`);
@@ -1162,7 +1164,7 @@ function undoAt(index) {
         if (h.kokCounterSnapshot != null) k.counter = Math.max(0, h.kokCounterSnapshot - 1);
       }
     }
-    history.splice(index, 1);
+    history[index]._deleted = true;
     render();
     toast('Dienst ongedaan gemaakt');
   });
@@ -1270,7 +1272,7 @@ function removeHistEntry(index) {
     if (!confirm('Dit logitem verwijderen uit de geschiedenis?\n(Tellers worden niet aangepast.)')) return;
     const h = history[index];
     const omschr = h ? `Dienstlog ${h.dienstDate||'?'} verwijderd (kok: ${h.kokNaam||'?'}, ${h.aantal||0} aanwezigen)` : 'Logitem verwijderd';
-    history.splice(index, 1);
+    history[index]._deleted = true;
     addAuditEntry('history_verwijderd', omschr);
     save();
     render();
@@ -1586,7 +1588,7 @@ function openPersonDetail(id) {
   document.getElementById('personHead').innerHTML = esc(p.name)
     + (p.bevelvoerder ? ' <span class="role-pill" style="font-size:11px;vertical-align:middle">BV</span>' : '')
     + ' <button class="x" onclick="closePersonDetail()">×</button>';
-  const cookHist = history.filter(h => (!h.type || h.type === 'dienst') && h.kokId === id);
+  const cookHist = history.filter(h => !h._deleted && (!h.type || h.type === 'dienst') && h.kokId === id);
   const histHtml = cookHist.length
     ? '<div class="cook-hist-list">' + cookHist.map(h => {
         const d = h.dienstDate ? new Date(h.dienstDate+'T12:00:00') : new Date(h.ts);
@@ -1690,7 +1692,7 @@ render();
   const rows = await loadFromCloud();
   let changed = false;
   // Sla lokale aantallen op vóór cloud-overwrite — voor dataverlies-detectie
-  const histVoor = history.length;
+  const histVoor = history.filter(h => !h._deleted).length;
   const peopleVoor = people.length;
   for (const row of rows) {
     if (row.id === 'main' && Array.isArray(row.people)) {
@@ -1715,9 +1717,10 @@ render();
     }
   }
   // Detecteer dataverlies: als cloud minder entries heeft dan lokaal was
-  if (histVoor > 0 && history.length < histVoor) {
+  const histNa = history.filter(h => !h._deleted).length;
+  if (histVoor > 0 && histNa < histVoor) {
     addAuditEntry('sync_waarschuwing',
-      `Cloud sync laadde ${history.length} history-vermeldingen, lokaal waren er ${histVoor} — mogelijk dataverlies!`);
+      `Cloud sync laadde ${histNa} history-vermeldingen, lokaal waren er ${histVoor} — mogelijk dataverlies!`);
     changed = true;
   }
   if (peopleVoor > 0 && people.length < peopleVoor) {
