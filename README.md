@@ -190,10 +190,13 @@ Bevelvoerders (BV) staan in de lijst maar doen standaard **niet** mee in de kook
 
 ## AVG / Privacy
 
-- Persoonsgegevens (namen, statistieken) staan **uitsluitend in Supabase** — niet in de broncode
-- De GitHub-repository bevat geen namen
+- Persoonsgegevens (namen, statistieken) horen **uitsluitend in Supabase** te staan — niet in de broncode
 - Supabase staat in de EU (Frankfurt)
 - Geen analytics, geen tracking, geen cookies van derden
+
+> **Let op:** in eerdere versies van `index.html` stond per ongeluk een gerenderde ploeglijst met
+> echte namen. Die is uit de huidige versie verwijderd, maar staat nog wél in de git-historie.
+> Commit een gerenderde pagina nooit terug over het bronbestand heen.
 
 ---
 
